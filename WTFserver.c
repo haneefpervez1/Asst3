@@ -16,6 +16,11 @@ int main(int argc, char** argv) {
 	listen(server_socket, 5);
 	int client_socket;
 	client_socket = accept(server_socket, NULL, NULL);
+	if (client_socket > 0) {
+		printf("connection acceptance success\n");
+	} else {
+		printf("connection acceptance failure\n");
+	}
 	send(client_socket, server_message, sizeof(server_message), 0);
 	//close(server_socket);
 	return 0;

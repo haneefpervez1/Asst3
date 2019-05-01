@@ -3,8 +3,16 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <string.h>
+#include <dirent.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
+int configure(char*, char*);
 
 int main (int args, char** argv) {
+	/*
 	int network_socket;
 	network_socket = socket(AF_INET, SOCK_STREAM, 0);
 	
@@ -21,5 +29,19 @@ int main (int args, char** argv) {
 	recv(network_socket, &server_response, sizeof(server_response), 0);
 	printf("The server sent the data: %s\n", server_response);
 	//close(network_socket);
+*/
+	if (strcmp(argv[1], "configure") == 0) {
+		configure(argv[2], argv[3]);
+	}
 	return 0;
+}
+
+int configure(char* hostname, char* port) {
+	printf("hostname: %s port: %s \n", hostname, port);
+	mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
+ 	int configure_file = creat("configure.txt", mode);
+	write(configure_file, hostname, sizeof(hostname));
+	write(configure_file, " ", strlen(" "));
+	write(configure_file, port, sizeof(port));
+	return 1;
 }
