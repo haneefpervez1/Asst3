@@ -23,13 +23,14 @@ int main (int args, char** argv) {
 	
 	int connection_status = connect(network_socket, (struct sockaddr *) &server_address, sizeof(server_address));
 	if (connection_status != 0) {
-		printf("Error with sdvvlconnection\n");
+		printf("Error with connection\n");
 	}
 	char server_response[256];
+	char client_message[256] = "Fuck this class\n";
 	recv(network_socket, &server_response, sizeof(server_response), 0);
 	printf("The server sent the data: %s\n", server_response);
 	//close(network_socket);
-
+	send(network_socket, &client_message, sizeof(client_message), 0);
 	if (strcmp(argv[1], "configure") == 0) {
 		configure(argv[2], argv[3]);
 	}
