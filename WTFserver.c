@@ -1,8 +1,13 @@
-#include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <string.h>
+#include <dirent.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <stdio.h>
 
 int main(int argc, char** argv) {
 	char server_message[256] = "You have reached thnaLCNlle server";
@@ -23,11 +28,19 @@ int main(int argc, char** argv) {
 			printf("connection acceptance failure\n");
 		}
 		char server_response[256];
-		send(client_socket, server_message, sizeof(server_message), 0);
-		recv(client_socket, &server_response, sizeof(server_response), 0);
-		printf("%s", server_response);
+		char server_Response[256];
+		write(client_socket, server_message, sizeof(server_message));
+		read(client_socket, &server_response, sizeof(server_response));
+		read(client_socket, &server_Response, sizeof(server_Response));
+		mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
+		//int length = sizeof(server_response) + 7;
+		char clientFile[500] = "server/"; 
+		char* path = strcat(clientFile, server_response);
+		int fd = open(path, O_RDWR | O_CREAT, mode);
+ 		//write(clientFile, "a", strlen("a"));
+		printf("%s %d %s", server_response, fd, server_Response);
 //	}
-	//close(server_socket);
+	close(server_socket);
 	return 0;
 }
 

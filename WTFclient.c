@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <stdio.h>
 
 int configure(char*, char*);
 
@@ -26,14 +27,16 @@ int main (int args, char** argv) {
 		printf("Error with connection\n");
 	}
 	char server_response[256];
-	char client_message[256] = "Fuck this class\n";
-	recv(network_socket, &server_response, sizeof(server_response), 0);
+	char client_message[256] = "test.txt\n";
+	read(network_socket, &server_response, sizeof(server_response));
 	printf("The server sent the data: %s\n", server_response);
-	//close(network_socket);
-	send(network_socket, &client_message, sizeof(client_message), 0);
+	write(network_socket, &client_message, sizeof(client_message));
 	if (strcmp(argv[1], "configure") == 0) {
+		char configureMessage[20] = "configure:2:tst.txt";
+		write(network_socket, &configureMessage, sizeof(configureMessage));
 		configure(argv[2], argv[3]);
 	}
+	close(network_socket);
 	return 0;
 }
 
