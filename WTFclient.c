@@ -12,7 +12,7 @@
 int configure(char*, char*);
 
 int main (int args, char** argv) {
-	/*
+	
 	int network_socket;
 	network_socket = socket(AF_INET, SOCK_STREAM, 0);
 	
@@ -29,7 +29,7 @@ int main (int args, char** argv) {
 	recv(network_socket, &server_response, sizeof(server_response), 0);
 	printf("The server sent the data: %s\n", server_response);
 	//close(network_socket);
-*/
+
 	if (strcmp(argv[1], "configure") == 0) {
 		configure(argv[2], argv[3]);
 	}

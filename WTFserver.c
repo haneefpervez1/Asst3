@@ -17,7 +17,7 @@ int main(int argc, char** argv) {
 	int client_socket;
 	client_socket = accept(server_socket, NULL, NULL);
 	if (client_socket > 0) {
-		printf("connection acceptance success\n");
+		printf("connection acceptance test success\n");
 	} else {
 		printf("connection acceptance failure\n");
 	}
