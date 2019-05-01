@@ -23,7 +23,7 @@ int main (int args, char** argv) {
 	
 	int connection_status = connect(network_socket, (struct sockaddr *) &server_address, sizeof(server_address));
 	if (connection_status != 0) {
-		printf("Error with connection\n");
+		printf("Error with kasfkksconnection\n");
 	}
 	char server_response[256];
 	recv(network_socket, &server_response, sizeof(server_response), 0);
