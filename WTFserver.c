@@ -11,6 +11,7 @@
 #include <openssl/sha.h>
 
 void hash(char*);
+void create_server(int);
 
 int main(int argc, char** argv) {
 	char server_message[256] = "You have reached the server";
@@ -32,20 +33,19 @@ int main(int argc, char** argv) {
 			printf("connection acceptance failure\n");
 		}
 		char server_response[256];
-		char server_Response[256];
+		char clientFile[1000] = "server/"; 
+		char* path = strcat(clientFile, server_response);
+		mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
+		open(path, O_RDWR | O_CREAT, mode);
 		write(client_socket, server_message, sizeof(server_message));
 		read(client_socket, &server_response, sizeof(server_response));
-		read(client_socket, &server_Response, sizeof(server_Response));
-		mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
-		//int length = sizeof(server_response) + 7;
-		char clientFile[500] = "server/"; 
-		char* path = strcat(clientFile, server_response);
-		int fd = open(path, O_RDWR | O_CREAT, mode);
- 		//write(clientFile, "a", strlen("a"));
-		printf("%s %d %s", server_response, fd, server_Response);
+		//int length = sizeof(server_re
+		create_server(client_socket);
+		//read(client_socket, &server, sizeof(server)); 
+		//printf("%s", server_response); 
 		hash("systems");
-//	}
-	close(server_socket);
+	//}
+	//close(server_socket);
 	return 0;
 }
 
@@ -59,5 +59,32 @@ void hash (char * contents) {
 	for (x = 0; x < SHA256_DIGEST_LENGTH; x++) {
 		printf("%02x", hash[x]);
 	}
+void create_server(int client_socket)
+{
+		char project[256];
+		read(client_socket, project, sizeof(project));
+		struct stat st = {0};
+		if(stat(project, &st) ==-1)
+		{
+		 mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
+		 char server[1000]= "server/";
+		 char  directory[1000];
+		 strcpy(directory, server);
+		 //printf("%s\n", directory);
+		 printf("%s\n", server);
+		 strcat(directory, project);
+		 printf("%s\n", project);
+		 //printf("%s", directory);
+		 mkdir(directory, 0700);
+		 char manifest[1000];
+		 strcpy(manifest, directory);
+		 strcat(manifest, "/");
+		 char * path = strcat(manifest, "manifest.txt");
+		 open(path, O_RDWR | O_CREAT, mode);
+		 write(client_socket, "created", sizeof("created"));
+		}
+		else
+		{
+		write(client_socket, "failed", sizeof("failed"));
+		}
 }
-
