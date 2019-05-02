@@ -50,14 +50,12 @@ int main (int args, char** argv) {
 	read(network_socket, &server_response, sizeof(server_response));
 	printf("The server sent the data: %s\n", server_response);
 	write(network_socket, &client_message, sizeof(client_message));
-<<<<<<< HEAD
 	if (strcmp(argv[1], "create")==0)
 	{
 	// char * createmsg = malloc(sizeof(argv[2])+1);
 	 //strcpy(createmsg, argv[2]);
 	 //write(network_socket, &createmsg, sizeof(createmsg));
 	 create(argv[2]);
-=======
 	else if (strcmp(argv[1], "create")==0)
 	{
 	 char * createmsg = malloc(sizeof(argv[2])+1);
