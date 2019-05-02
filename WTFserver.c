@@ -50,9 +50,14 @@ int main(int argc, char** argv) {
 }
 
 void hash (char * contents) {
-	size_t length = strlen(contents);
-	unsigned char hash[SHA_DIGEST_LENGTH];
-	SHA1((unsigned char *)contents, length, hash);
-	printf("hash: %X\n", *hash);
+	int x;
+	unsigned char hash [SHA256_DIGEST_LENGTH];
+	SHA256_CTX sha256;
+	SHA256_Init(&sha256);
+	SHA256_Update(&sha256, contents, strlen(contents));
+	SHA256_Final(hash, &sha256);
+	for (x = 0; x < SHA256_DIGEST_LENGTH; x++) {
+		printf("%02x", hash[x]);
+	}
 }
 
