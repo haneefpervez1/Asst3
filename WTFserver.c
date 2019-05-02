@@ -59,6 +59,7 @@ void hash (char * contents) {
 	for (x = 0; x < SHA256_DIGEST_LENGTH; x++) {
 		printf("%02x", hash[x]);
 	}
+}
 void create_server(int client_socket)
 {
 		char project[256];
@@ -89,20 +90,4 @@ void create_server(int client_socket)
 		}
 		//read(client_socket, &server, sizeof(server)); 
 		//printf("%s", server_response); 
-		hash("systems");
-	//}
-	//close(server_socket);
-	return 0;
-}
-
-void hash (char * contents) {
-	int x;
-	unsigned char hash [SHA256_DIGEST_LENGTH];
-	SHA256_CTX sha256;
-	SHA256_Init(&sha256);
-	SHA256_Update(&sha256, contents, strlen(contents));
-	SHA256_Final(hash, &sha256);
-	for (x = 0; x < SHA256_DIGEST_LENGTH; x++) {
-		printf("%02x", hash[x]);
-	}
 }

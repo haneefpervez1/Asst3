@@ -48,12 +48,6 @@ int main (int args, char** argv) {
 	write(network_socket, &client_message, sizeof(client_message));
 	if (strcmp(argv[1], "create")==0)
 	{
-	// char * createmsg = malloc(sizeof(argv[2])+1);
-	 //strcpy(createmsg, argv[2]);
-	 //write(network_socket, &createmsg, sizeof(createmsg));
-	 create(argv[2]);
-	else if (strcmp(argv[1], "create")==0)
-	{
 	 char * createmsg = malloc(sizeof(argv[2])+1);
 	 char direct[100];
 	 char choice [100];
