@@ -11,6 +11,7 @@
 #include <openssl/sha.h>
 
 void hash(char*);
+void create_server(int);
 
 int main(int argc, char** argv) {
 	char server_message[256] = "You have reached thnaLCNlle server";
@@ -31,21 +32,36 @@ int main(int argc, char** argv) {
 			printf("connection acceptance failure\n");
 		}
 		char server_response[256];
-		char project[256];
-		//char server[6];
-		write(client_socket, server_message, sizeof(server_message));
-		read(client_socket, &server_response, sizeof(server_response));
-		read(client_socket, project, sizeof(project));
-		mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
-		//int length = sizeof(server_response) + 7;
 		char clientFile[1000] = "server/"; 
 		char* path = strcat(clientFile, server_response);
-		int fd = open(path, O_RDWR | O_CREAT, mode);
- 		//write(clientFile, "a", strlen("a"));
-		printf("%s %d %s\n", server_response, fd, project);
+		mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
+		open(path, O_RDWR | O_CREAT, mode);
+		write(client_socket, server_message, sizeof(server_message));
+		read(client_socket, &server_response, sizeof(server_response));
+		//int length = sizeof(server_re
+		create_server(client_socket);
+		//read(client_socket, &server, sizeof(server)); 
+		//printf("%s", server_response); 
+		hash("systems");
+	//}
+	//close(server_socket);
+	return 0;
+}
+
+void hash (char * contents) {
+	size_t length = strlen(contents);
+	unsigned char hash[SHA_DIGEST_LENGTH];
+	SHA1((unsigned char *)contents, length, hash);
+	//printf("%x\n", hash);
+}
+void create_server(int client_socket)
+{
+		char project[256];
+		read(client_socket, project, sizeof(project));
 		struct stat st = {0};
 		if(stat(project, &st) ==-1)
 		{
+		 mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
 		 char server[1000]= "server/";
 		 char  directory[1000];
 		 strcpy(directory, server);
@@ -66,18 +82,4 @@ int main(int argc, char** argv) {
 		{
 		write(client_socket, "failed", sizeof("failed"));
 		}
-		//read(client_socket, &server, sizeof(server)); 
-		//printf("%s", server_response); 
-		hash("systems");
-	//}
-	//close(server_socket);
-	return 0;
 }
-
-void hash (char * contents) {
-	size_t length = strlen(contents);
-	unsigned char hash[SHA_DIGEST_LENGTH];
-	SHA1((unsigned char *)contents, length, hash);
-	//printf("%x\n", hash);
-}
-
