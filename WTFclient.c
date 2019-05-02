@@ -10,8 +10,14 @@
 #include <fcntl.h>
 #include <stdio.h>
 
+struct manifest{
+	char * path;
+	int version;
+	int hash;
+	struct manifest * next;
+};
 int configure(char*, char*);
-
+int create (char *);
 int main (int args, char** argv) {
 	
 	int network_socket;
@@ -36,6 +42,13 @@ int main (int args, char** argv) {
 		write(network_socket, &configureMessage, sizeof(configureMessage));
 		configure(argv[2], argv[3]);
 	}
+	else if (strcmp(argv[1], "create")==0)
+	{
+	 char * createmsg = malloc(sizeof(argv[2])+1);
+	 strcpy(createmsg, argv[2]);
+	 write(network_socket, &createmsg, sizeof(createmsg));
+	 create(argv[2]);
+	}
 	close(network_socket);
 	return 0;
 }
@@ -48,4 +61,8 @@ int configure(char* hostname, char* port) {
 	write(configure_file, " ", strlen(" "));
 	write(configure_file, port, sizeof(port));
 	return 1;
+}
+int create (char * projectname)
+{
+ return 1;
 }
