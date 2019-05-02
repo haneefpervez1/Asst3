@@ -13,13 +13,14 @@
 void hash(char*);
 
 int main(int argc, char** argv) {
-	char server_message[256] = "You have reached thnaLCNlle server";
+	char server_message[256] = "You have reached the server";
 	//for (;;) {	
+		int portNum = atoi(argv[1]);
 		int server_socket;
 		server_socket = socket(AF_INET, SOCK_STREAM, 0);
 		struct sockaddr_in server_address;
 		server_address.sin_family = AF_INET;
-		server_address.sin_port = htons(9002);
+		server_address.sin_port = htons(portNum);
 		server_address.sin_addr.s_addr = INADDR_ANY;
 		bind(server_socket, (struct sockaddr*) &server_address, sizeof(server_address));
 		listen(server_socket, 5);
@@ -52,6 +53,6 @@ void hash (char * contents) {
 	size_t length = strlen(contents);
 	unsigned char hash[SHA_DIGEST_LENGTH];
 	SHA1((unsigned char *)contents, length, hash);
-	printf("%p\n", hash);
+	printf("hash: %X\n", *hash);
 }
 
