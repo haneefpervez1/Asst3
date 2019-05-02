@@ -22,6 +22,7 @@ int create (char *);
 int getPortNum();
 
 int main (int args, char** argv) {
+<<<<<<< HEAD
 	
 	if (strcmp(argv[1], "configure") == 0) {
 		//char configureMessage[20] = "configure:2:tst.txt";
@@ -29,6 +30,9 @@ int main (int args, char** argv) {
 		printf("configure %d\n", configure(argv[2], argv[3]));
 	}
 
+=======
+	char client [100] = "client/";
+>>>>>>> hs770-branch
 	int network_socket;
 	network_socket = socket(AF_INET, SOCK_STREAM, 0);
 	int port = getPortNum();
@@ -46,12 +50,36 @@ int main (int args, char** argv) {
 	read(network_socket, &server_response, sizeof(server_response));
 	printf("The server sent the data: %s\n", server_response);
 	write(network_socket, &client_message, sizeof(client_message));
+<<<<<<< HEAD
 	if (strcmp(argv[1], "create")==0)
 	{
 	// char * createmsg = malloc(sizeof(argv[2])+1);
 	 //strcpy(createmsg, argv[2]);
 	 //write(network_socket, &createmsg, sizeof(createmsg));
 	 create(argv[2]);
+=======
+	else if (strcmp(argv[1], "create")==0)
+	{
+	 char * createmsg = malloc(sizeof(argv[2])+1);
+	 char direct[100];
+	 char choice [100];
+	 char path [100];
+	 strcpy(createmsg, argv[2]);
+	 printf("%s", createmsg);
+	 write(network_socket, createmsg, sizeof(createmsg));
+	 read(network_socket, choice, sizeof(choice));
+	 if(choice[0]=='c')
+	 {
+	  strcpy(direct, client);
+	  strcat(direct, createmsg);
+	  mkdir(direct, 0700);
+	  strcpy(path, direct);
+	  strcat(path, "/manifest.txt");
+	  mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
+	  open(path,O_RDWR | O_CREAT, mode);
+	 }
+	 
+>>>>>>> hs770-branch
 	}
 	//close(network_socket);
 	return 0;
@@ -72,7 +100,7 @@ int configure(char* hostname, char* port) {
 }
 int create (char * projectname)
 {
- return 1;
+	return 1;
 }
 
 int getPortNum() {
