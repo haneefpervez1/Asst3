@@ -8,6 +8,9 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <stdio.h>
+#include <openssl/sha.h>
+
+void hash(char*);
 
 int main(int argc, char** argv) {
 	char server_message[256] = "You have reached thnaLCNlle server";
@@ -39,8 +42,16 @@ int main(int argc, char** argv) {
 		int fd = open(path, O_RDWR | O_CREAT, mode);
  		//write(clientFile, "a", strlen("a"));
 		printf("%s %d %s", server_response, fd, server_Response);
+		hash("systems");
 //	}
 	close(server_socket);
 	return 0;
+}
+
+void hash (char * contents) {
+	size_t length = strlen(contents);
+	unsigned char hash[SHA_DIGEST_LENGTH];
+	SHA1((unsigned char *)contents, length, hash);
+	printf("%p\n", hash);
 }
 
