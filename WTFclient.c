@@ -55,6 +55,7 @@ int main (int args, char** argv) {
 		//command = argv[1];
 		//strcat(command, argv[2]);
 		send_to_server(network_socket, argv[1]);
+		send_to_server(network_socket, argv[2]);
 		//printf("%s", argv[1]);
 	}
 	
@@ -88,12 +89,11 @@ int main (int args, char** argv) {
 void send_to_server(int network_socket, char * string)
 {
  int len = strlen(string);
- printf("%s\n", string);
+ printf("String Name: %s\n", string);
  char c[4];
  sprintf(c, "%d", len);
- printf("%s", c);
+ printf("Length of String: %s\n", c);
  write(network_socket, c, sizeof(c));
- //printf("%d\n", a);
  write(network_socket, string, sizeof(string));
 }
 int configure(char* hostname, char* port) {

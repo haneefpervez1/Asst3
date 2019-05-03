@@ -12,7 +12,7 @@
 
 void hash(char*);
 void create_server(int);
-void isCommand(int);
+char *READ(int);
 
 int main(int argc, char** argv) {
 	char server_message[256] = "You have reached the server";
@@ -35,20 +35,27 @@ int main(int argc, char** argv) {
 		}
 		write(client_socket, server_message, sizeof(server_message));
 	// ------------------------------------------------------------------------>
-		char length[4];
-		read(client_socket, length, sizeof(length));
-		int num = atoi(length);
-		char buffer[num];
-		read(client_socket, buffer, sizeof(buffer));
-		printf("%d\n", num);
-		printf("%s\n", length);
-		printf("%s\n", buffer);
+		char * buffer = READ(client_socket);
+		printf("%s", buffer);
+		if(strncmp("checkout",buffer, 8)==0)
+		{
+			READ(client_socket);
+			//printf("%s", temp);
+		}
 		//hash("systems");
 	//close(server_socket);
 	return 0;
 }
-void isCommand(int client_socket){
-	//read(client_socket, 
+char * READ(int client_socket){
+	char length[4];
+	read(client_socket, length, sizeof(length));
+	int num = atoi(length);
+	printf("Length Received: %d\n", num);
+	//printf("%s\n", length);
+	char *buffer = malloc(sizeof(char) * num);
+	read(client_socket, buffer, sizeof(buffer));
+	printf("%s\n", buffer);
+	return buffer;
 }
 
 void hash (char * contents) {
