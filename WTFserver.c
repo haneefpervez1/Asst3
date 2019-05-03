@@ -36,7 +36,7 @@ int main(int argc, char** argv) {
 		write(client_socket, server_message, sizeof(server_message));
 	// ------------------------------------------------------------------------>
 		char * buffer = READ(client_socket);
-		printf("%s", buffer);
+		printf("%s\n", buffer);
 		if(strncmp("checkout",buffer, 8)==0)
 		{
 			READ(client_socket);
