@@ -43,7 +43,7 @@ int main(int argc, char** argv) {
 		create_server(client_socket);
 		//read(client_socket, &server, sizeof(server)); 
 		//printf("%s", server_response); 
-		hash("systems");
+		//hash("systems");
 	//}
 	//close(server_socket);
 	return 0;

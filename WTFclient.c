@@ -9,6 +9,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <stdio.h>
+#include <openssl/sha.h>
 
 struct manifest{
 	char * path;
@@ -20,6 +21,10 @@ struct manifest{
 int configure(char*, char*);
 int create (char *);
 int getPortNum();
+void addFile(char*, char*);
+char* readFile(int fd);
+char* hash (char *);
+
 
 int main (int args, char** argv) {
 
@@ -27,6 +32,9 @@ int main (int args, char** argv) {
 		//char configureMessage[20] = "configure:2:tst.txt";
 		//write(network_socket, &configureMessage, sizeof(configureMessage));
 		printf("configure %d\n", configure(argv[2], argv[3]));
+	}
+	if (strcmp(argv[1], "add") == 0) {
+		addFile(argv[2], argv[3]);
 	}
 	char client [100] = "client/";
 	int network_socket;
@@ -66,6 +74,9 @@ int main (int args, char** argv) {
 	  mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
 	  open(path,O_RDWR | O_CREAT, mode);
 	 }
+	}
+	if (strcmp(argv[1], "add") == 0) {
+		addFile(argv[2], argv[3]);
 	}
 	//close(network_socket);
 	return 0;
@@ -114,4 +125,57 @@ int getPortNum() {
 		return port;
 	}
 	return -1;
+}
+
+char* readFile (int fd) {
+	int i=1;
+	char buff[1];
+	int x = read(fd, buff, 1);
+	char string[10000];
+	string[0]=buff[0]; 
+	char* stringPtr = string;
+	while(x != 0)
+	{
+		x = read(fd, buff, 1);
+		if(buff[0]!='\n')
+		{
+			string[i]=buff[0];
+		} 
+		i++;
+	}
+	
+	return stringPtr;
+}
+
+void addFile (char* projName, char* filename) {				// still need to deal with if project doesnt exist
+	
+	int length = strlen(projName) + strlen(filename) + strlen("client/");
+	printf("length %d\n", length);
+	char* path = malloc(length+2);
+	strcpy(path, "client/");
+	strcat(path, projName);
+	strcat(path, "/");
+	strcat(path, filename);
+	int fd = open(path, O_RDONLY);
+	char* string = readFile(fd);
+	char* hashString = hash(string);
+	printf("new file: %s fd: %d\nThese are the contents: %s\n", path, fd, hashString);
+	//printf("file desc %d\n", fd);
+	//printf("%s will be added to %s\n", filename, projName);
+}
+
+char* hash (char * contents) {
+	int x;
+	unsigned char hash [SHA256_DIGEST_LENGTH];
+	SHA256_CTX sha256;
+	SHA256_Init(&sha256);
+	SHA256_Update(&sha256, contents, strlen(contents));
+	SHA256_Final(hash, &sha256);
+	char* string = malloc(SHA256_DIGEST_LENGTH*2 + 1);
+	for (x = 0; x < SHA256_DIGEST_LENGTH; x++) {
+		sprintf(string+(x*2), "%02x", hash[x]);
+	}
+	int index = SHA256_DIGEST_LENGTH * 2;
+	string[index] = '\0';
+	return string;
 }
