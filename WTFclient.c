@@ -19,24 +19,22 @@ struct manifest{
 };
 
 int configure(char*, char*);
-int create (char *);
 int getPortNum();
 void addFile(char*, char*);
 char* readFile(int fd);
 char* hash (char *);
+void send_to_server(int, char *);
 
 
 int main (int args, char** argv) {
-
+	char client [100] = "client/";
+	//char * command;
 	if (strcmp(argv[1], "configure") == 0) {
 		//char configureMessage[20] = "configure:2:tst.txt";
 		//write(network_socket, &configureMessage, sizeof(configureMessage));
 		printf("configure %d\n", configure(argv[2], argv[3]));
 	}
-	if (strcmp(argv[1], "add") == 0) {
-		addFile(argv[2], argv[3]);
-	}
-	char client [100] = "client/";
+// ----------------------------------------------------------------------------------> SOCKET CREATION
 	int network_socket;
 	network_socket = socket(AF_INET, SOCK_STREAM, 0);
 	int port = getPortNum();
@@ -50,10 +48,16 @@ int main (int args, char** argv) {
 		printf("Error with connection\n");
 	}
 	char server_response[256];
-	char client_message[256] = "test.txt\n";
 	read(network_socket, &server_response, sizeof(server_response));
 	printf("The server sent the data: %s\n", server_response);
-	write(network_socket, &client_message, sizeof(client_message));
+// ------------------------------------------------------------------------------------------------------------------> SOCKET CREATION
+	if (strcmp(argv[1], "checkout") == 0){
+		//command = argv[1];
+		//strcat(command, argv[2]);
+		send_to_server(network_socket, argv[1]);
+		//printf("%s", argv[1]);
+	}
+	
 	if (strcmp(argv[1], "create")==0)
 	{
 	 char * createmsg = malloc(sizeof(argv[2])+1);
@@ -81,7 +85,17 @@ int main (int args, char** argv) {
 	//close(network_socket);
 	return 0;
 }
-
+void send_to_server(int network_socket, char * string)
+{
+ int len = strlen(string);
+ printf("%s\n", string);
+ char c[4];
+ sprintf(c, "%d", len);
+ printf("%s", c);
+ write(network_socket, c, sizeof(c));
+ //printf("%d\n", a);
+ write(network_socket, string, sizeof(string));
+}
 int configure(char* hostname, char* port) {
 	if (access(".configure", F_OK) != -1) {
 		printf("configure file already exists\n");
@@ -95,11 +109,6 @@ int configure(char* hostname, char* port) {
 	write(configure_file, hostname, strlen(hostname));
 	return -1;
 }
-int create (char * projectname)
-{
-	return 1;
-}
-
 int getPortNum() {
 	if (access(".configure", F_OK) != -1) {
 		int fd = open(".configure", O_RDONLY);

@@ -12,10 +12,11 @@
 
 void hash(char*);
 void create_server(int);
+void isCommand(int);
 
 int main(int argc, char** argv) {
 	char server_message[256] = "You have reached the server";
-	//for (;;) {	
+	// -------------------------------------------------------> SOCKET CREATION
 		int portNum = atoi(argv[1]);
 		int server_socket;
 		server_socket = socket(AF_INET, SOCK_STREAM, 0);
@@ -32,21 +33,22 @@ int main(int argc, char** argv) {
 		} else {
 			printf("connection acceptance failure\n");
 		}
-		char server_response[256];
-		char clientFile[1000] = "server/"; 
-		char* path = strcat(clientFile, server_response);
-		mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
-		open(path, O_RDWR | O_CREAT, mode);
 		write(client_socket, server_message, sizeof(server_message));
-		read(client_socket, &server_response, sizeof(server_response));
-		//int length = sizeof(server_re
-		create_server(client_socket);
-		//read(client_socket, &server, sizeof(server)); 
-		//printf("%s", server_response); 
+	// ------------------------------------------------------------------------>
+		char length[4];
+		read(client_socket, length, sizeof(length));
+		int num = atoi(length);
+		char buffer[num];
+		read(client_socket, buffer, sizeof(buffer));
+		printf("%d\n", num);
+		printf("%s\n", length);
+		printf("%s\n", buffer);
 		//hash("systems");
-	//}
 	//close(server_socket);
 	return 0;
+}
+void isCommand(int client_socket){
+	//read(client_socket, 
 }
 
 void hash (char * contents) {
