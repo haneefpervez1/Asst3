@@ -156,7 +156,7 @@ char* readFile (int fd) {
 	return stringPtr;
 }
 
-void addFile (char* projName, char* filename) {				// still need to deal with if project doesnt exist
+void addFile (char* projName, char* filename) {				// still need to deal with if project doesnt exist and if file is already in manifest
 	
 	int length = strlen(projName) + strlen(filename) + strlen("client/");
 	printf("length %d\n", length);
@@ -169,10 +169,35 @@ void addFile (char* projName, char* filename) {				// still need to deal with if
 	char* string = readFile(fd);
 	char* hashString = hash(string);
 	printf("new file: %s fd: %d\nThese are the contents: %s\n", path, fd, hashString);
+	int manifestLength = strlen(filename) + strlen(hashString) + strlen("0");
+	char* manifestLine = malloc(manifestLength + 3);
+	strcpy(manifestLine, filename);
+	strcat(manifestLine, " 0 ");
+	strcat(manifestLine, hashString);
+	printf("full line:\n%s", manifestLine);
+	char* manifestPath = malloc(strlen(projName) + 14 +strlen("client/"));
+	strcpy(manifestPath, "client/");
+	strcat(manifestPath, projName);
+	strcat(manifestPath, "/manifest.txt");
+	printf("manifest file %s\n", manifestPath);
+	
+	int fileD = open(manifestPath, O_RDWR);
+	printf("fileD %d\n", fileD);
+	
+	char buff[1];
+	int x = read(fileD, buff, 1);
+	while(x != 0)
+	{
+		x = read(fileD, buff, 1);
+	}
+	write(fileD, manifestLine, strlen(manifestLine));
+	write(fileD, "\n", strlen("\n"));
 	//printf("file desc %d\n", fd);
 	//printf("%s will be added to %s\n", filename, projName);
 }
-
+/*
+	Generates hash and stores it in string
+*/
 char* hash (char * contents) {
 	int x;
 	unsigned char hash [SHA256_DIGEST_LENGTH];
