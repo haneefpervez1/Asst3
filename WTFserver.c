@@ -51,11 +51,13 @@ char * READ(int client_socket){
 	read(client_socket, length, sizeof(length));
 	int num = atoi(length);
 	printf("Length Received: %d\n", num);
-	//printf("%s\n", length);
-	char *buffer = malloc(sizeof(char) * num);
+	printf("%s\n", length);
+	//char *buffer = malloc(sizeof(char) * num);
+	char buffer[num];
+	char * temp = buffer;
 	read(client_socket, buffer, sizeof(buffer));
 	printf("%s\n", buffer);
-	return buffer;
+	return temp;
 }
 
 void hash (char * contents) {
