@@ -55,7 +55,7 @@ int main (int args, char** argv) {
 		//command = argv[1];
 		//strcat(command, argv[2]);
 		send_to_server(network_socket, argv[1]);
-		send_to_server(network_socket, argv[2]);
+		//send_to_server(network_socket, argv[2]);
 		//printf("%s", argv[1]);
 	}
 	

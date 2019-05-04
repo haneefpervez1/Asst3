@@ -39,6 +39,7 @@ int main(int argc, char** argv) {
 		printf("%s\n", buffer);
 		if(strncmp("checkout",buffer, 8)==0)
 		{
+			//free(buffer);
 			READ(client_socket);
 			//printf("%s", temp);
 		}
@@ -52,9 +53,9 @@ char * READ(int client_socket){
 	int num = atoi(length);
 	printf("Length Received: %d\n", num);
 	//printf("%s\n", length);
-	char *buffer = malloc(sizeof(char) * num);
+	char *buffer = malloc(sizeof(char) * num );
 	read(client_socket, buffer, sizeof(buffer));
-	printf("%s\n", buffer);
+	//printf("%s\n", buffer);
 	return buffer;
 }
 
