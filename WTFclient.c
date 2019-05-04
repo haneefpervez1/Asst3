@@ -56,7 +56,7 @@ int main (int args, char** argv) {
 		//command = argv[1];
 		//strcat(command, argv[2]);
 		send_to_server(network_socket, argv[1]);
-		//send_to_server(network_socket, argv[2]);
+		send_to_server(network_socket, argv[2]);
 		//printf("%s", argv[1]);
 	}
 	
@@ -86,15 +86,17 @@ int main (int args, char** argv) {
 	}
 	if (strcmp(argv[1], "update") == 0) {
 		send_to_server(network_socket, argv[1]);
-
-		char updateMessage[256];
-		read(network_socket, &updateMessage, sizeof(updateMessage));
-		printf("update message: %s\n", updateMessage);
+		send_to_server(network_socket, argv[2]);
+		char* manifestString = READ(network_socket);
+		printf("manifest %s\n", manifestString);
+		//char updateMessage[256];
+		//read(network_socket, &updateMessage, sizeof(updateMessage));
+		/*printf("update message: %s\n", updateMessage);
 		if (strcmp(updateMessage, "update command received") == 0) {
 			send_to_server(network_socket, argv[2]);
 		}
 		char* manifestString = READ(network_socket);
-		printf("manifest %s\n", manifestString);
+		printf("manifest %s\n", manifestString);*/
 	}
 	//close(network_socket);
 	return 0;
@@ -102,15 +104,13 @@ int main (int args, char** argv) {
 void send_to_server(int network_socket, char * string)
 {
  int len = strlen(string);
-/*
  printf("String Name: %s\n", string);
  char c[4];
  sprintf(c, "%d", len);
  printf("Length of String: %s\n", c);
-*/
- int number = htonl(len);
- write(network_socket, &number, sizeof(number));
- write(network_socket, string, sizeof(string));
+ //int number = htonl(len);
+ write(network_socket, c, 4);
+ write(network_socket, string, (strlen(string)+1));
 }
 int configure(char* hostname, char* port) {
 	if (access(".configure", F_OK) != -1) {

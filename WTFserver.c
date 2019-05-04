@@ -44,9 +44,9 @@ int main(int argc, char** argv) {
 			READ(client_socket);
 			//printf("%s", temp);
 		}
-		if (strcmp("update", buffer) == 0) {
-			write(client_socket, "update command received", strlen("update command received"));
-			char* projName = READ(client_socket);
+		if (strncmp("update", buffer, 6) == 0) {
+			//write(client_socket, "update command received", strlen("update command received"));
+			char * projName = READ(client_socket);
 			printf("projName: %s\n", projName);
 			char* path = malloc(strlen(projName) + strlen("server/") + strlen("/manifest.txt") + 1);
 			strcpy(path, "server/");
@@ -62,7 +62,7 @@ int main(int argc, char** argv) {
 }
 char * READ(int client_socket){
 	//char length[4];
-	int length = 0;
+	/*int length = 0;
 	read(client_socket, &length, sizeof(length));
 	//int num = atoi(length);
 	//length = length -47;
@@ -70,9 +70,18 @@ char * READ(int client_socket){
 	//printf("%s\n", length);
 	char *buffer = malloc(length+1);
 	read(client_socket, buffer, length+1);
-	buffer[length] = '\0';
+	buffer[length] = '\0';*/
+	char length[4];
+	read(client_socket, length, 4);
+	int num = atoi(length);
+	printf("%s\n", length);
+	printf("Length Received: %d\n", num);
+	//char *buffer = malloc(sizeof(chcar) * num);
+	char buffer[num];
+	char * temp = buffer;
+	read(client_socket, buffer, num+1);
 	printf("%s\n", buffer);
-	return buffer;
+	return temp;
 }
 
 void hash (char * contents) {
@@ -150,16 +159,12 @@ char* getFile(char* filename) {
 void send_to_client(int network_socket, char * string)
 {
  int len = strlen(string);
-/*
  printf("String Name: %s\n", string);
  char c[4];
  sprintf(c, "%d", len);
-*/
- printf("len: %d\n", len);
+ printf("Length of String: %s\n", c);
  //int number = htonl(len);
- printf("Length of String: %d\n", len);
- write(network_socket, &len, sizeof(len));
- printf("%s will be sent to client\n", string);
- write(network_socket, string, sizeof(string));
+ write(network_socket, c, 4);
+ write(network_socket, string, (strlen(string)+1));
 }
 
