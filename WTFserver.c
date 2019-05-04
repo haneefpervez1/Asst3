@@ -64,10 +64,10 @@ int main(int argc, char** argv) {
 }
 char * READ(int client_socket){
 	//char length[4];
-	unsigned int length = 0;
+	int length = 0;
 	read(client_socket, &length, sizeof(length));
 	//int num = atoi(length);
-	length = length -47;
+	//length = length -47;
 	printf("Length Received: %d\n", length);
 	//printf("%s\n", length);
 	char *buffer = malloc(length+1);
@@ -156,10 +156,12 @@ void send_to_client(int network_socket, char * string)
  printf("String Name: %s\n", string);
  char c[4];
  sprintf(c, "%d", len);
- printf("Length of String: %s\n", c);
 */
-	printf("length of string %d\n", len); 
- write(network_socket, &c, sizeof(c));
+ printf("len: %d\n", len);
+ //int number = htonl(len);
+ printf("Length of String: %d\n", len);
+ write(network_socket, &len, sizeof(len));
+ printf("%s will be sent to client\n", string);
  write(network_socket, string, sizeof(string));
 }
 

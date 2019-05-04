@@ -10,6 +10,7 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <openssl/sha.h>
+#include <arpa/inet.h>
 
 struct manifest{
 	char * path;
@@ -101,11 +102,14 @@ int main (int args, char** argv) {
 void send_to_server(int network_socket, char * string)
 {
  int len = strlen(string);
+/*
  printf("String Name: %s\n", string);
  char c[4];
  sprintf(c, "%d", len);
  printf("Length of String: %s\n", c);
- write(network_socket, c, sizeof(c));
+*/
+ int number = htonl(len);
+ write(network_socket, &number, sizeof(number));
  write(network_socket, string, sizeof(string));
 }
 int configure(char* hostname, char* port) {
@@ -227,9 +231,9 @@ char* hash (char * contents) {
 }
 char * READ(int client_socket){
 	//char length[4];
-	unsigned int length;
+	int length = 0;
 	read(client_socket, &length, sizeof(length));
-	length = length-47;
+	//length = length-47;
 	//int num = atoi(length);
 	printf("Length Received: %d\n", length);
 	//printf("%s\n", length);
