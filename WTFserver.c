@@ -27,8 +27,19 @@ int main(int argc, char** argv) {
 		server_address.sin_family = AF_INET;
 		server_address.sin_port = htons(portNum);
 		server_address.sin_addr.s_addr = INADDR_ANY;
-		bind(server_socket, (struct sockaddr*) &server_address, sizeof(server_address));
-		listen(server_socket, 5);
+		int opt = 1;
+		if (setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
+			perror("setsocketopt");
+			exit(1);
+		}
+		if(bind(server_socket, (struct sockaddr*) &server_address, sizeof(server_address))) {
+			perror("bind failed");
+			exit(1);
+		}
+		if(listen(server_socket, 5)) {
+			perror("listen failed");
+			exit(1);
+		}
 		int client_socket;
 		client_socket = accept(server_socket, NULL, NULL);
 		if (client_socket > 0) {
@@ -57,7 +68,7 @@ int main(int argc, char** argv) {
 			send_to_client(client_socket, manifestMessage);
 		}
 		//hash("systems");
-	//close(server_socket);
+	close(server_socket);
 	return 0;
 }
 char * READ(int client_socket){

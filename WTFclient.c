@@ -87,7 +87,8 @@ int main (int args, char** argv) {
 	if (strcmp(argv[1], "update") == 0) {
 		send_to_server(network_socket, argv[1]);
 		send_to_server(network_socket, argv[2]);
-		READ(network_socket);
+		char* string = READ(network_socket);
+		printf("contents of manifest: %s\n", string);
 		//printf("manifest %s\n", manifestString);
 		//char updateMessage[256];
 		//read(network_socket, &updateMessage, sizeof(updateMessage));
@@ -98,7 +99,7 @@ int main (int args, char** argv) {
 		char* manifestString = READ(network_socket);
 		printf("manifest %s\n", manifestString);*/
 	}
-	//close(network_socket);
+	close(network_socket);
 	return 0;
 }
 void send_to_server(int network_socket, char * string)
@@ -246,9 +247,9 @@ char * READ(int client_socket){
 	printf("%s\n", length);
 	printf("Length Received: %d\n", num);
 	//char *buffer = malloc(sizeof(chcar) * num);
-	char buffer[num];
-	char * temp = buffer;
+	char* buffer = malloc(num+1);
+	//char * temp = buffer;
 	read(client_socket, buffer, num+1);
-	printf("sent from server %s\n", temp);
-	return temp;
+	printf("sent from server %s\n", buffer);
+	return buffer;
 }
