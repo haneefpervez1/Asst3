@@ -13,6 +13,7 @@
 void hash(char*);
 void create_server(int);
 char *READ(int);
+char* readFile (int);
 
 int main(int argc, char** argv) {
 	char server_message[256] = "You have reached the server";
@@ -36,11 +37,15 @@ int main(int argc, char** argv) {
 		write(client_socket, server_message, sizeof(server_message));
 	// ------------------------------------------------------------------------>
 		char * buffer = READ(client_socket);
-		printf("%s\n", buffer);
+		//printf("%s\n", buffer);
 		if(strncmp("checkout",buffer, 8)==0)
 		{
 			READ(client_socket);
 			//printf("%s", temp);
+		}
+		if (strcmp("update", buffer) == 0) {
+			char* projName = READ(client_socket);
+			printf("projName: %s\n", projName);
 		}
 		//hash("systems");
 	//close(server_socket);
@@ -52,8 +57,9 @@ char * READ(int client_socket){
 	int num = atoi(length);
 	printf("Length Received: %d\n", num);
 	//printf("%s\n", length);
-	char *buffer = malloc(sizeof(char) * num);
-	read(client_socket, buffer, sizeof(buffer));
+	char *buffer = malloc(num+1);
+	read(client_socket, buffer, num+1);
+	buffer[num] = '\0';
 	printf("%s\n", buffer);
 	return buffer;
 }
@@ -68,6 +74,25 @@ void hash (char * contents) {
 	for (x = 0; x < SHA256_DIGEST_LENGTH; x++) {
 		printf("%02x", hash[x]);
 	}
+}
+char* readFile (int fd) {
+	int i=1;
+	char buff[1];
+	int x = read(fd, buff, 1);
+	char string[10000];
+	string[0]=buff[0]; 
+	char* stringPtr = string;
+	while(x != 0)
+	{
+		x = read(fd, buff, 1);
+		if(buff[0]!='\n')
+		{
+			string[i]=buff[0];
+		} 
+		i++;
+	}
+	
+	return stringPtr;
 }
 void create_server(int client_socket)
 {

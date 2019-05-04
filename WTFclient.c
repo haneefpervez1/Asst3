@@ -83,6 +83,10 @@ int main (int args, char** argv) {
 	if (strcmp(argv[1], "add") == 0) {
 		addFile(argv[2], argv[3]);
 	}
+	if (strcmp(argv[1], "update") == 0) {
+		send_to_server(network_socket, argv[1]);
+		send_to_server(network_socket, argv[2]);
+	}
 	//close(network_socket);
 	return 0;
 }
