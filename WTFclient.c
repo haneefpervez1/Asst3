@@ -85,7 +85,13 @@ int main (int args, char** argv) {
 	}
 	if (strcmp(argv[1], "update") == 0) {
 		send_to_server(network_socket, argv[1]);
-		send_to_server(network_socket, argv[2]);
+
+		char updateMessage[256];
+		read(network_socket, &updateMessage, sizeof(updateMessage));
+		printf("update message: %s\n", updateMessage);
+		if (strcmp(updateMessage, "update command received") == 0) {
+			send_to_server(network_socket, argv[2]);
+	}
 	}
 	//close(network_socket);
 	return 0;

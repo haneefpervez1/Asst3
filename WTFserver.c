@@ -37,13 +37,15 @@ int main(int argc, char** argv) {
 		write(client_socket, server_message, sizeof(server_message));
 	// ------------------------------------------------------------------------>
 		char * buffer = READ(client_socket);
-		//printf("%s\n", buffer);
+		//char * buffer2 = READ(client_socket);
+		//printf("%s\n", buffer2);
 		if(strncmp("checkout",buffer, 8)==0)
 		{
 			READ(client_socket);
 			//printf("%s", temp);
 		}
 		if (strcmp("update", buffer) == 0) {
+			write(client_socket, "update command received", strlen("update command received"));
 			char* projName = READ(client_socket);
 			printf("projName: %s\n", projName);
 		}
@@ -52,14 +54,15 @@ int main(int argc, char** argv) {
 	return 0;
 }
 char * READ(int client_socket){
-	char length[4];
-	read(client_socket, length, sizeof(length));
-	int num = atoi(length);
-	printf("Length Received: %d\n", num);
+	//char length[4];
+	unsigned int length;
+	read(client_socket, &length, sizeof(length));
+	//int num = atoi(length);
+	printf("Length Received: %d\n", length);
 	//printf("%s\n", length);
-	char *buffer = malloc(num+1);
-	read(client_socket, buffer, num+1);
-	buffer[num] = '\0';
+	char *buffer = malloc(length+1);
+	read(client_socket, buffer, length+1);
+	buffer[length] = '\0';
 	printf("%s\n", buffer);
 	return buffer;
 }
