@@ -87,8 +87,8 @@ int main (int args, char** argv) {
 	if (strcmp(argv[1], "update") == 0) {
 		send_to_server(network_socket, argv[1]);
 		send_to_server(network_socket, argv[2]);
-		char* manifestString = READ(network_socket);
-		printf("manifest %s\n", manifestString);
+		READ(network_socket);
+		//printf("manifest %s\n", manifestString);
 		//char updateMessage[256];
 		//read(network_socket, &updateMessage, sizeof(updateMessage));
 		/*printf("update message: %s\n", updateMessage);
@@ -231,16 +231,24 @@ char* hash (char * contents) {
 }
 char * READ(int client_socket){
 	//char length[4];
-	int length = 0;
+	/*int length = 0;
 	read(client_socket, &length, sizeof(length));
-	//length = length-47;
 	//int num = atoi(length);
+	//length = length -47;
 	printf("Length Received: %d\n", length);
 	//printf("%s\n", length);
 	char *buffer = malloc(length+1);
 	read(client_socket, buffer, length+1);
-	buffer[length] = '\0';
-	printf("%s\n", buffer);
-	return buffer;
+	buffer[length] = '\0';*/
+	char length[4];
+	read(client_socket, length, 4);
+	int num = atoi(length);
+	printf("%s\n", length);
+	printf("Length Received: %d\n", num);
+	//char *buffer = malloc(sizeof(chcar) * num);
+	char buffer[num];
+	char * temp = buffer;
+	read(client_socket, buffer, num+1);
+	printf("sent from server %s\n", temp);
+	return temp;
 }
-
