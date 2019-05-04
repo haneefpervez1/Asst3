@@ -14,6 +14,8 @@ void hash(char*);
 void create_server(int);
 char *READ(int);
 char* readFile (int);
+char* getFile(char*);
+void send_to_client(int , char * );
 
 int main(int argc, char** argv) {
 	char server_message[256] = "You have reached the server";
@@ -48,6 +50,13 @@ int main(int argc, char** argv) {
 			write(client_socket, "update command received", strlen("update command received"));
 			char* projName = READ(client_socket);
 			printf("projName: %s\n", projName);
+			char* path = malloc(strlen(projName) + strlen("server/") + strlen("/manifest.txt") + 1);
+			strcpy(path, "server/");
+			strcat(path, projName);
+			strcat(path, "/manifest.txt");
+			printf("path: %s\n", path);
+			char* manifestMessage = getFile(path);
+			send_to_client(client_socket, manifestMessage);
 		}
 		//hash("systems");
 	//close(server_socket);
@@ -55,9 +64,10 @@ int main(int argc, char** argv) {
 }
 char * READ(int client_socket){
 	//char length[4];
-	unsigned int length;
+	unsigned int length = 0;
 	read(client_socket, &length, sizeof(length));
 	//int num = atoi(length);
+	length = length -47;
 	printf("Length Received: %d\n", length);
 	//printf("%s\n", length);
 	char *buffer = malloc(length+1);
@@ -128,3 +138,28 @@ void create_server(int client_socket)
 		//read(client_socket, &server, sizeof(server)); 
 		//printf("%s", server_response); 
 }
+
+char* getFile(char* filename) {
+	int fd = open(filename, O_RDONLY);
+	char* string = readFile(fd);
+	printf("string: %s\n", string);
+	char* message = malloc(strlen("s:manifest:") +strlen(string) + 1);
+	strcpy(message, "s:manifest:");
+	strcat(message, string);
+	printf("message: %s\n", message);
+	return message;
+}
+void send_to_client(int network_socket, char * string)
+{
+ int len = strlen(string);
+/*
+ printf("String Name: %s\n", string);
+ char c[4];
+ sprintf(c, "%d", len);
+ printf("Length of String: %s\n", c);
+*/
+	printf("length of string %d\n", len); 
+ write(network_socket, &c, sizeof(c));
+ write(network_socket, string, sizeof(string));
+}
+

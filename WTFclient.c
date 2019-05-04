@@ -24,7 +24,7 @@ void addFile(char*, char*);
 char* readFile(int fd);
 char* hash (char *);
 void send_to_server(int, char *);
-
+char * READ(int);
 
 int main (int args, char** argv) {
 	char client [100] = "client/";
@@ -91,7 +91,9 @@ int main (int args, char** argv) {
 		printf("update message: %s\n", updateMessage);
 		if (strcmp(updateMessage, "update command received") == 0) {
 			send_to_server(network_socket, argv[2]);
-	}
+		}
+		char* manifestString = READ(network_socket);
+		printf("manifest %s\n", manifestString);
 	}
 	//close(network_socket);
 	return 0;
@@ -223,3 +225,18 @@ char* hash (char * contents) {
 	string[index] = '\0';
 	return string;
 }
+char * READ(int client_socket){
+	//char length[4];
+	unsigned int length;
+	read(client_socket, &length, sizeof(length));
+	length = length-47;
+	//int num = atoi(length);
+	printf("Length Received: %d\n", length);
+	//printf("%s\n", length);
+	char *buffer = malloc(length+1);
+	read(client_socket, buffer, length+1);
+	buffer[length] = '\0';
+	printf("%s\n", buffer);
+	return buffer;
+}
+
