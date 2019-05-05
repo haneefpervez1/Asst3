@@ -214,8 +214,12 @@ void read_string(char * string)
  	 	if(fileNum!=0)			//Create a file
  	 	{
 		 token = strtok(NULL, ":");	// Project Name
-	 	 int fd = open(token,O_RDWR | O_CREAT, mode);
-	 	 printf("File %s Created:\n", token);
+		 char* filename = malloc(strlen(token) + strlen("client/")+1);
+		 strcpy(filename, "client/");
+		 strcat(filename, token);
+	 	 int fd = open(filename,O_RDWR | O_CREAT, mode);
+		 printf("this is the fd %d\n", fd); 
+	 	 printf("File %s Created:\n", filename);
 	 	 token = strtok(NULL, ":");	// Bytes to write
 	 	 int bytes = atoi(token);
 	 	 token = strtok(NULL, ":");	// What to Write
