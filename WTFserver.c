@@ -10,12 +10,21 @@
 #include <stdio.h>
 #include <openssl/sha.h>
 
+struct fileNode {
+	int nameLength;
+	char* name;
+	int contentLength;
+	char* contents;
+	struct fileNode * next;
+};
+
 void hash(char*);
 void create_server(int);
 char *READ(int);
 char* readFile (int);
-char* getFile(char*);
+char* sendFile(int , struct fileNode *);
 void send_to_client(int , char * );
+int addToList(struct fileNode**, int, char*, int, char*);
 
 int main(int argc, char** argv) {
 	char server_message[256] = "You have reached the server";
@@ -64,7 +73,11 @@ int main(int argc, char** argv) {
 			strcat(path, projName);
 			strcat(path, "/manifest.txt");
 			printf("path: %s\n", path);
-			char* manifestMessage = getFile(path);
+			struct fileNode* fileList= NULL;
+			int length = addToList(&fileList, strlen("manifest.txt"), "manifest.txt", strlen("a"),"a");
+			length = addToList(&fileList, strlen("abcde"), "abcde", strlen("abc"), "abc");
+			printf("fileList length is %d\n", length);
+			char* manifestMessage = sendFile(length, fileList);
 			send_to_client(client_socket, manifestMessage);
 		}
 		//hash("systems");
@@ -156,8 +169,12 @@ void create_server(int client_socket)
 		//read(client_socket, &server, sizeof(server)); 
 		//printf("%s", server_response); 
 }
-
-char* getFile(char* filename) {
+/*
+	The message sent is of the format
+	s:<# of files>:<length of filename>:<filename>:<length of contents>:<contents>:<next file following same format>
+*/
+char* sendFile(int listLength, struct fileNode* head) {	
+	/*
 	int fd = open(filename, O_RDONLY);
 	char* string = readFile(fd);
 	printf("string: %s\n", string);
@@ -166,6 +183,42 @@ char* getFile(char* filename) {
 	strcat(message, string);
 	printf("message: %s\n", message);
 	return message;
+	*/
+	int length = 0;
+	struct fileNode *ptr = head;
+	while (ptr != NULL) {
+		char buffer1[10];
+		char buffer2[10];
+		sprintf(buffer1, "%d", ptr->nameLength);
+		sprintf(buffer2, "%d", ptr->contentLength);
+		length += strlen(buffer1) + strlen(buffer2) + strlen(ptr->name) + strlen(ptr->contents) + 4;
+		ptr = ptr->next;
+	}
+	char listLen [10];
+	sprintf(listLen, "%d", listLength);
+	length += strlen(listLen) + 3;
+	printf("sendFile length %d\n", length);
+	char* serverMessage = malloc(length);
+	strcpy(serverMessage, "s:");
+	strcat(serverMessage, listLen);
+	ptr = head;
+	while (ptr != NULL) {
+		char buffer1[10];
+		char buffer2[10];
+		sprintf(buffer1, "%d", ptr->nameLength);
+		sprintf(buffer2, "%d", ptr->contentLength);
+		strcat(serverMessage, ":");
+		strcat(serverMessage, buffer1);
+		strcat(serverMessage, ":");
+		strcat(serverMessage, ptr->name);
+		strcat(serverMessage, ":");
+		strcat(serverMessage, buffer2);
+		strcat(serverMessage, ":");
+		strcat(serverMessage, ptr->contents);
+		ptr = ptr->next;
+	}
+	printf("serverMessage: %s\n", serverMessage);
+	return serverMessage;
 }
 void send_to_client(int network_socket, char * string)
 {
@@ -177,5 +230,31 @@ void send_to_client(int network_socket, char * string)
  //int number = htonl(len);
  write(network_socket, c, 4);
  write(network_socket, string, (strlen(string)+1));
+}
+int addToList(struct fileNode ** head, int nameLength, char* name, int contentLength, char* contents) {
+	int counter = 0;
+	struct fileNode* temp = (struct fileNode*)malloc(sizeof(struct fileNode));
+	temp->nameLength = nameLength;
+	temp->name = malloc(nameLength+1);
+	strcpy(temp->name, name);
+	temp->name[nameLength] = '\0';
+	temp->contentLength = contentLength;
+	temp->contents = malloc(contentLength+1);
+	strcpy(temp->contents, contents);
+	temp->contents[contentLength] = '\0';
+	//printf("a structnode containing %d %s %d %s will be added\n", temp->nameLength, temp->name, temp->contentLength, temp->contents); 
+	if (*head == NULL) {
+		*head = temp;
+		counter = 1;
+	} else {
+		struct fileNode * ptr = *head;
+		while (ptr->next != NULL) {
+			ptr = ptr->next;
+			counter++;
+		}
+		ptr->next = temp;
+	}
+	printf("a structnode containing %d %s %d %s has been added\n",temp->nameLength, name, contentLength, contents); 
+	return counter;
 }
 
