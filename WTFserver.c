@@ -61,7 +61,36 @@ int main(int argc, char** argv) {
 		char * buffer = READ(client_socket);
 		if(strncmp("checkout",buffer, 8)==0)
 		{
-			READ(client_socket);
+			char * project = READ(client_socket);
+			char path[7+strlen(project)];
+			strcpy(path, "server");
+			strcat(path, "/");
+			strcat(path, project);
+			printf("%s\n", path);
+			struct dirent *de;
+			DIR * dr = opendir(path);
+			if (dr == NULL) {
+			printf("error\n");
+			return 1;
+			}
+			while ((de = readdir(dr)) != NULL) {
+				//printf("%s\n", de->d_name);
+				if(de->d_type == DT_REG)
+				{
+				char Path[strlen(path)+strlen(de->d_name)+1];
+				strcpy(Path, path);
+				strcat(Path, "/"); 
+				strcat(Path, de->d_name);
+				struct fileNode *fileList = NULL;
+				int temp = open(Path, O_RDONLY);
+				char * tempS =readFile(temp);
+				int size = strlen(tempS);
+				printf("Content Length: %d\n", size);
+				printf("Contents of File: %s\n", tempS);
+				int l = addToList(&fileList, strlen(Path), Path, strlen(tempS), tempS);
+				send_to_client(client_socket, (sendFile(l, fileList)));
+				}
+			}
 			//printf("%s", temp);
 		}
 		if (strncmp("update", buffer, 6) == 0) {
@@ -123,6 +152,7 @@ char* readFile (int fd) {
 	int i=1;
 	char buff[1];
 	int x = read(fd, buff, 1);
+	//printf("%c\n", buff[0]);
 	char string[10000];
 	string[0]=buff[0]; 
 	char* stringPtr = string;
@@ -131,6 +161,7 @@ char* readFile (int fd) {
 		x = read(fd, buff, 1);
 		if(buff[0]!='\n')
 		{
+			//printf("%c\n", string[i]);
 			string[i]=buff[0];
 		} 
 		i++;
@@ -200,7 +231,7 @@ char* sendFile(int listLength, struct fileNode* head) {
 	printf("sendFile length %d\n", length);
 	char* serverMessage = malloc(length);
 	strcpy(serverMessage, "s:");
-	strcat(serverMessage, listLen);
+	strcat(serverMessage, "1"); // Should be > 0
 	ptr = head;
 	while (ptr != NULL) {
 		char buffer1[10];

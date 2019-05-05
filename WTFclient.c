@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <openssl/sha.h>
 #include <arpa/inet.h>
+#include <ctype.h>
 
 struct manifest{
 	char * path;
@@ -22,7 +23,8 @@ struct manifest{
 int configure(char*, char*);
 int getPortNum();
 void addFile(char*, char*);
-char* readFile(int fd);
+void read_string(char *);
+//int is_digit(char *);
 char* hash (char *);
 void send_to_server(int, char *);
 char * READ(int);
@@ -55,9 +57,20 @@ int main (int args, char** argv) {
 	if (strcmp(argv[1], "checkout") == 0){
 		//command = argv[1];
 		//strcat(command, argv[2]);
+		struct stat st = {0};
+
+		if (stat("/some/directory", &st) != -1) {
+    		 printf("Project name already exists");
+		}
+		else
+		{
 		send_to_server(network_socket, argv[1]);
 		send_to_server(network_socket, argv[2]);
+		char* string = READ(network_socket);
+		printf("contents of manifest: %s\n", string);
+		read_string(string);
 		//printf("%s", argv[1]);
+		}
 	}
 	
 	if (strcmp(argv[1], "create")==0)
@@ -89,6 +102,7 @@ int main (int args, char** argv) {
 		send_to_server(network_socket, argv[2]);
 		char* string = READ(network_socket);
 		printf("contents of manifest: %s\n", string);
+		read_string(string);
 		//printf("manifest %s\n", manifestString);
 		//char updateMessage[256];
 		//read(network_socket, &updateMessage, sizeof(updateMessage));
@@ -172,7 +186,46 @@ char* readFile (int fd) {
 	
 	return stringPtr;
 }
+/*int is_digit(char * string)
+{
+ int i;
+ for(i=0;i<=strlen(string);i++)
+ {
+  if(isdigit(string[i])==0)
+  {
+  	return 0;
+  }
+ }
+ return 1;
+}*/
 
+void read_string(char * string)
+{
+	printf("Reading.\n");
+	printf("Reading..\n");
+	printf("Reading...\n");
+ 	char * token = strtok(string, ":");
+ 	token = strtok(NULL,":");
+ 	int fileNum = atoi(token);
+ 	mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
+ 	while(token!=NULL)
+ 	{
+ 	 token = strtok(NULL,":");
+ 	 	if(fileNum!=0)			//Create a file
+ 	 	{
+		 token = strtok(NULL, ":");	// Project Name
+	 	 int fd = open(token,O_RDWR | O_CREAT, mode);
+	 	 printf("File %s Created:\n", token);
+	 	 token = strtok(NULL, ":");	// Bytes to write
+	 	 int bytes = atoi(token);
+	 	 token = strtok(NULL, ":");	// What to Write
+	 	 write(fd, token, bytes);
+	 	 printf("Content %s written:\n", token);
+	 	 close(fd);
+	 	 fileNum--;
+		}
+ 	}
+}
 void addFile (char* projName, char* filename) {				// still need to deal with if project doesnt exist and if file is already in manifest
 	
 	int length = strlen(projName) + strlen(filename) + strlen("client/");
