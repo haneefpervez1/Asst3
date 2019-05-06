@@ -24,6 +24,7 @@ struct updateNode {
 	char* tag;
 	char* path;
 	char* hash;
+	char* version;
 	struct updateNode* next;
 };
 
@@ -47,8 +48,10 @@ void checkAdd(struct manifestNode * , struct manifestNode * );
 void checkDelete(struct manifestNode * , struct manifestNode * );
 int openUpdate(char* );
 struct updateNode* getUpgradeList(char* ); 
-void addUpgradeList(struct updateNode ** , char* , char* , char* );
+void addUpgradeList(struct updateNode ** , char* , char* , char*,char* );
 void deleteFromManifest(struct updateNode* , struct manifestNode** );
+void updateManifest(struct updateNode* , struct manifestNode** );
+void overWriteMan (struct manifestNode** , char* , char* , char* ) ;
 
 int main (int args, char** argv) {
 	char client [100] = "client/";
@@ -496,7 +499,11 @@ void checkModify(struct manifestNode * serverManifest, struct manifestNode * cli
 	struct manifestNode *clientPtr = clientManifest;
 	while (clientPtr != NULL) {
 		if (checkIfPresent(clientPtr, serverManifest, "modify") == 0) {
-			printf("M %s %s\n", clientPtr->path, clientPtr->hash);	
+			struct manifestNode* serverPtr = serverManifest;
+			while (strcmp(clientPtr->path, serverPtr->path) != 0) {
+				serverPtr = serverPtr->next;
+			}
+			printf("M %s %s\n", clientPtr->path, serverPtr->hash);
 			int fd = openUpdate(clientPtr->path);
 			char buff[1];
 			int x = read(fd, buff, 1);
@@ -506,7 +513,9 @@ void checkModify(struct manifestNode * serverManifest, struct manifestNode * cli
 			write(fd, "M ", strlen("M "));	
 			write(fd, clientPtr->path, strlen(clientPtr->path));
 			write(fd, " ", strlen(" "));
-			write(fd, clientPtr->hash, strlen(clientPtr->hash));
+			write(fd, serverPtr->hash, strlen(serverPtr->hash));
+			write(fd, " ", strlen(" "));
+			write(fd, serverPtr->version, strlen(serverPtr->version));
 			write(fd, "\n", strlen("\n"));
 		}
 		clientPtr = clientPtr->next;
@@ -527,6 +536,8 @@ void checkAdd(struct manifestNode * serverManifest, struct manifestNode * client
 			write(fd, serverPtr->path, strlen(serverPtr->path));
 			write(fd, " ", strlen(" "));
 			write(fd, serverPtr->hash, strlen(serverPtr->hash));
+			write(fd, " ", strlen(" "));
+			write(fd, serverPtr->version, strlen(serverPtr->version));
 			write(fd, "\n", strlen("\n"));
 		}
 		serverPtr = serverPtr->next;
@@ -547,6 +558,8 @@ void checkDelete(struct manifestNode * serverManifest, struct manifestNode * cli
 			write(fd, clientPtr->path, strlen(clientPtr->path));
 			write(fd, " ", strlen(" "));
 			write(fd, clientPtr->hash, strlen(clientPtr->hash));
+			write(fd, " ", strlen(" "));
+			write(fd, clientPtr->version, strlen(clientPtr->version));
 			write(fd, "\n", strlen("\n"));
 		}
 		clientPtr = clientPtr->next;
@@ -597,8 +610,11 @@ struct updateNode* getUpgradeList(char* projName) {
 	token = strtok(NULL, " \n");
 	char* hash = token;
 	printf("hash: %s\n", hash);
+	token = strtok(NULL, " \n");
+	char* version = token;
+	printf("version: %s\n", version);
 	struct updateNode * upgradeList = NULL;
-	addUpgradeList(&upgradeList, tag, path, hash);
+	addUpgradeList(&upgradeList, tag, path, hash, version);
 	while (token != NULL) {
 		token = strtok(NULL, " \n");
 		tag = token;
@@ -609,9 +625,12 @@ struct updateNode* getUpgradeList(char* projName) {
 		token = strtok(NULL, " \n");
 		hash = token;
 		printf("hash: %s\n", hash);
+		token = strtok(NULL, " \n");
+		version = token;
+		printf("version: %s\n", version);
 	
 		if (tag != NULL) {
-			addUpgradeList(&upgradeList, tag, path, hash);
+			addUpgradeList(&upgradeList, tag, path, hash, version);
 		}
 	
 	}
@@ -641,14 +660,16 @@ struct updateNode* getUpgradeList(char* projName) {
 		}
 	}
 	deleteFromManifest(upgradeList, &clientManifest);
+	updateManifest(upgradeList, &clientManifest);
 	struct manifestNode * manifestCur = clientManifest;
+	printf("----this is the manifest list ----------\n");
 	while (manifestCur != NULL) {
 		printf("path: %s version: %s hash: %s\n", manifestCur->path, manifestCur->version, manifestCur->hash);
 		manifestCur = manifestCur->next;
 	}
 	return NULL;
 }
-void addUpgradeList(struct updateNode ** head, char* tag, char* path, char* hash) {
+void addUpgradeList(struct updateNode ** head, char* tag, char* path, char* hash, char* version) {
 	struct updateNode* temp = (struct updateNode*)malloc(sizeof(struct updateNode));
 	temp->tag = malloc(strlen(tag)+1);
 	strcpy(temp->tag, tag);
@@ -659,7 +680,10 @@ void addUpgradeList(struct updateNode ** head, char* tag, char* path, char* hash
 	temp->hash = malloc(strlen(hash)+1);
 	strcpy(temp->hash, hash);
 	temp->hash[strlen(hash)] = '\0';
-	printf("the node contains %s %s %s\n", tag, path, hash);
+	temp->version = malloc(strlen(version)+1);
+	strcpy(temp->version, version);
+	temp->version[strlen(version)] = '\0';
+	printf("the node contains %s %s %s %s\n", tag, path, hash, version);
 	if (*head == NULL) {
 		*head = temp;
 	} else {
@@ -698,4 +722,25 @@ void deleteFromManifest(struct updateNode* upgradeList, struct manifestNode** ma
 	printf("node containing %s will be deleted\n", manifestCur->path);
 	manifestPrev->next = manifestCur->next;
 	free(manifestCur);
+}
+void updateManifest(struct updateNode* upgradeList, struct manifestNode** manifestList) {
+	struct updateNode* updatePtr = upgradeList;
+	while (updatePtr != NULL) {
+		if (strcmp(updatePtr->tag, "A") == 0) {
+			addManifestList(manifestList, updatePtr->path, updatePtr->version, updatePtr->hash);
+		} else if (strcmp(updatePtr->tag, "M") == 0) {
+			overWriteMan(manifestList, updatePtr->path, updatePtr->version, updatePtr->hash);
+		}
+		updatePtr = updatePtr->next;
+	}
+}
+void overWriteMan (struct manifestNode** manifestList, char* path, char* version, char* hash) {
+	struct manifestNode* ptr = *manifestList;
+	while (strcmp(path, ptr->path) != 0) {
+		ptr = ptr->next;
+	}
+	ptr->version = malloc(strlen(version)+1);
+	strcpy(ptr->version, version);
+	ptr->version[strlen(version)] = '\0';
+	strcpy(ptr->hash, hash);
 }
