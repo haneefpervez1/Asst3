@@ -53,12 +53,9 @@ void deleteFromManifest(struct updateNode* , struct manifestNode** );
 void updateManifest(struct updateNode* , struct manifestNode** );
 void overWriteMan (struct manifestNode** , char* , char* , char* ) ;
 char* requestFiles(struct updateNode* );
-<<<<<<< HEAD
 int checkDir(char *);
-=======
 void writeFile(char* , char* );
 
->>>>>>> 102e2346308542f04e491e25249e055572bc0256
 int main (int args, char** argv) {
 	char client [100] = "client/";
 	//char * command;
@@ -122,7 +119,7 @@ int main (int args, char** argv) {
 	  strcat(direct, createmsg);
 	  mkdir(direct, 0700);
 	  strcpy(path, direct);
-	  strcat(path, "/manifest.txt");
+	  strcat(path, "/.Manifest");
 	  mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
 	  open(path,O_RDWR | O_CREAT, mode);
 	 }
@@ -317,7 +314,7 @@ void addFile (char* projName, char* filename) {				// still need to deal with if
 	char* manifestPath = malloc(strlen(projName) + 14 +strlen("client/"));
 	strcpy(manifestPath, "client/");
 	strcat(manifestPath, projName);
-	strcat(manifestPath, "/manifest.txt");
+	strcat(manifestPath, "/.Manifest");
 	printf("manifest file %s\n", manifestPath);
 	
 	int fileD = open(manifestPath, O_RDWR);
@@ -417,11 +414,11 @@ void compareManifests(char* manifestString, char* projName) {
 			addManifestList(&serverManifest, path, version, hash);
 		}
 	}
-	char* path = malloc(strlen("client/") + strlen(projName) + strlen("/manifest.txt") + 1);
+	char* path = malloc(strlen("client/") + strlen(projName) + strlen("/.Manifest") + 1);
 	strcpy(path, "client/");
 	strcat(path, projName);
-	strcat(path, "/manifest.txt");
-	path[strlen("client/") + strlen(projName) + strlen("/manifest.txt")] = '\0';
+	strcat(path, "/.Manifest");
+	path[strlen("client/") + strlen(projName) + strlen("/.Manifest")] = '\0';
 	printf("client manifest\n");
 	int fd = open(path, O_RDONLY);
 	char* otherManifest = readFile(fd);
@@ -663,11 +660,11 @@ char* getUpgradeList(char* projName) {
 		}
 	
 	}
-	char* manifestPath = malloc(strlen("client/") + strlen(projName) + strlen("/manifest.txt") + 1);
+	char* manifestPath = malloc(strlen("client/") + strlen(projName) + strlen("/.Manifest") + 1);
 	strcpy(manifestPath, "client/");
 	strcat(manifestPath, projName);
-	strcat(manifestPath, "/manifest.txt");
-	manifestPath[strlen("client/") + strlen(projName) + strlen("/manifest.txt")] = '\0';
+	strcat(manifestPath, "/.Manifest");
+	manifestPath[strlen("client/") + strlen(projName) + strlen("/.Manifest")] = '\0';
 	printf("client manifest\n");
 	int manfd = open(manifestPath, O_RDONLY);
 	char* otherManifest = readFile(manfd);

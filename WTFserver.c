@@ -29,7 +29,6 @@ int addToList(struct fileNode**, int, char*, int, char*);
 int printDir(char*, struct fileNode**);
 int printDir_contents (char* directoryName, struct fileNode ** head);
 int tokStringSendFiles(struct fileNode ** , char* );
->>>>>>> 102e2346308542f04e491e25249e055572bc0256
 
 int main(int argc, char** argv) {
 	char server_message[256] = "You have reached the server";
@@ -107,10 +106,10 @@ int main(int argc, char** argv) {
 			//write(client_socket, "update command received", strlen("update command received"));
 			char * projName = READ(client_socket);
 			printf("projName: %s\n", projName);
-			char* path = malloc(strlen(projName) + strlen("server/") + strlen("/manifest.txt") + 1);
+			char* path = malloc(strlen(projName) + strlen("server/") + strlen("/.Manifest") + 1);
 			strcpy(path, "server/");
 			strcat(path, projName);
-			strcat(path, "/manifest.txt");
+			strcat(path, "/.Manifest");
 			printf("path: %s\n", path);
 			int fd = open(path , O_RDONLY);
 			printf("file desc %d\n", fd);
@@ -181,24 +180,26 @@ char* hash (char * contents) {
 }
 char* readFile (int fd) {
 	int i=1;
-	char buff[1];
-	int x = read(fd, buff, 1);
+	char buff;
+	int x = read(fd, &buff, 1);
 	//printf("%c\n", buff[0]);
 	char string[10000];
-	string[0]=buff[0]; 
-	char* stringPtr = string;
-	while(x != 0)
+	string[0]=buff; 
+	while((x != 0) || (buff!='\n'))
 	{
-		x = read(fd, buff, 1);
-	//	if(buff[0]!='\n')
-	//	{
+		x = read(fd, &buff, 1);
 			//printf("%c\n", string[i]);
-			string[i]=buff[0];
-	//	} 
+			string[i]=buff;
 		i++;
 	}
-	
-	return stringPtr;
+	int index=i;
+	char stringPtr[index];
+	for(i=0;i<index;i++)
+	{
+	 stringPtr[i]=string[i];
+	}
+	char * l = stringPtr;
+	return l;
 }
 void create_server(int client_socket)
 {
@@ -220,7 +221,7 @@ void create_server(int client_socket)
 		 char manifest[1000];
 		 strcpy(manifest, directory);
 		 strcat(manifest, "/");
-		 char * path = strcat(manifest, "manifest.txt");
+		 char * path = strcat(manifest, ".Manifest");
 		 open(path, O_RDWR | O_CREAT, mode);
 		 write(client_socket, "created", sizeof("created"));
 		}
@@ -331,6 +332,7 @@ int printDir (char* directoryName, struct fileNode ** head) {
 			if (strcmp(dir->d_name, ".") != 0 && strcmp(dir->d_name, "..") != 0) {
 				int fd = open(filename, O_RDONLY);
 				char* contents = readFile(fd);
+				close(fd);
 				char* hashString = hash(contents);
 				fileListLen = addToList(head, strlen(filename), filename, strlen(hashString), hashString);
 				printf("printDir file contents: %s\n", contents); 
@@ -356,7 +358,9 @@ int printDir_contents (char* directoryName, struct fileNode ** head) {
 			printf("%s\n", filename);
 			if (strcmp(dir->d_name, ".") != 0 && strcmp(dir->d_name, "..") != 0) {
 				int fd = open(filename, O_RDONLY);
+				printf("PRINTDR FD: %d", fd);
 				char* contents = readFile(fd);
+				close(fd);
 				//char* hashString = hash(contents);
 				fileListLen = addToList(head, strlen(filename), filename, strlen(contents), contents);
 				printf("printDir file contents: %s\n", contents); 
