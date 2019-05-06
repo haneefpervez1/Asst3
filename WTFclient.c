@@ -53,7 +53,7 @@ void deleteFromManifest(struct updateNode* , struct manifestNode** );
 void updateManifest(struct updateNode* , struct manifestNode** );
 void overWriteMan (struct manifestNode** , char* , char* , char* ) ;
 char* requestFiles(struct updateNode* );
-
+int checkDir(char *);
 int main (int args, char** argv) {
 	char client [100] = "client/";
 	//char * command;
@@ -82,16 +82,19 @@ int main (int args, char** argv) {
 	if (strcmp(argv[1], "checkout") == 0){
 		//command = argv[1];
 		//strcat(command, argv[2]);
-		struct stat st = {0};
-
-		if (stat("/some/directory", &st) != -1) {
-    		 printf("Project name already exists");
+		char path[7+strlen(argv[2])];
+		strcpy(path, "client/");
+	  	strcat(path,argv[2]);
+		if (checkDir(path)==0) {
+ 
 		}
 		else
 		{
 		send_to_server(network_socket, argv[1]);
 		send_to_server(network_socket, argv[2]);
 		char* string = READ(network_socket);
+	  	printf("%s\n", path);
+		mkdir(path, 0700);
 		printf("contents of manifest: %s\n", string);
 		read_string(string);
 		//printf("%s", argv[1]);
@@ -137,6 +140,16 @@ int main (int args, char** argv) {
 	}
 	close(network_socket);
 	return 0;
+}
+int checkDir(char * path)
+{
+ 	struct stat st = {0};
+	if (stat(path, &st) != -1)
+	{
+    	printf("Error:Project name already exists\n");
+    	return 0;
+	}
+  return 1;
 }
 void send_to_server(int network_socket, char * string)
 {

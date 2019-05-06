@@ -27,6 +27,7 @@ char* sendFile(int , struct fileNode *);
 void send_to_client(int , char * );
 int addToList(struct fileNode**, int, char*, int, char*);
 int printDir(char*, struct fileNode**);
+int printDir_contents (char* directoryName, struct fileNode ** head);
 
 int main(int argc, char** argv) {
 	char server_message[256] = "You have reached the server";
@@ -69,13 +70,17 @@ int main(int argc, char** argv) {
 			strcat(path, "/");
 			strcat(path, project);
 			printf("%s\n", path);
-			struct dirent *de;
 			DIR * dr = opendir(path);
 			if (dr == NULL) {
 			printf("error\n");
 			return 1;
 			}
-			while ((de = readdir(dr)) != NULL) {
+			struct fileNode *fileList = NULL;
+			int length = printDir_contents(path, &fileList);
+			char* msg = sendFile(length, fileList);
+			printf("%s\n", msg);
+			send_to_client(client_socket, msg);
+			/*while ((de = readdir(dr)) != NULL) {
 				//printf("%s\n", de->d_name);
 				if(de->d_type == DT_REG)
 				{
@@ -83,6 +88,7 @@ int main(int argc, char** argv) {
 				strcpy(Path, path);
 				strcat(Path, "/"); 
 				strcat(Path, de->d_name);
+				printf("%s\n", Path);
 				struct fileNode *fileList = NULL;
 				int temp = open(Path, O_RDONLY);
 				char * tempS =readFile(temp);
@@ -92,7 +98,7 @@ int main(int argc, char** argv) {
 				int l = addToList(&fileList, strlen(Path), Path, strlen(tempS), tempS);
 				send_to_client(client_socket, (sendFile(l, fileList)));
 				}
-			}
+			}*/
 			//printf("%s", temp);
 		}
 		if (strncmp("update", buffer, 6) == 0) {
@@ -141,7 +147,7 @@ char * READ(int client_socket){
 	char length[4];
 	read(client_socket, length, 4);
 	int num = atoi(length);
-	printf("%s\n", length);
+	//printf("%s\n", length);
 	printf("Length Received: %d\n", num);
 	//char *buffer = malloc(sizeof(chcar) * num);
 	//char buffer[num];
@@ -315,6 +321,32 @@ int printDir (char* directoryName, struct fileNode ** head) {
 				char* contents = readFile(fd);
 				char* hashString = hash(contents);
 				fileListLen = addToList(head, strlen(filename), filename, strlen(hashString), hashString);
+				printf("printDir file contents: %s\n", contents); 
+			}
+		}
+		closedir(d);
+	}
+	printf("printdir filelist len : %d\n", fileListLen);
+	return fileListLen;
+}
+int printDir_contents (char* directoryName, struct fileNode ** head) {
+	DIR *d;
+	struct dirent *dir;
+	d = opendir(directoryName);
+	int dirNameLen = strlen(directoryName);
+	int fileListLen = 0;
+	if (d) {
+		while ((dir = readdir(d)) != NULL) {
+			char* filename = malloc(dirNameLen + strlen(dir->d_name) + 2);
+			strcpy(filename, directoryName);
+			strcat(filename, "/");
+			strcat(filename, dir->d_name);
+			printf("%s\n", filename);
+			if (strcmp(dir->d_name, ".") != 0 && strcmp(dir->d_name, "..") != 0) {
+				int fd = open(filename, O_RDONLY);
+				char* contents = readFile(fd);
+				//char* hashString = hash(contents);
+				fileListLen = addToList(head, strlen(filename), filename, strlen(contents), contents);
 				printf("printDir file contents: %s\n", contents); 
 			}
 		}
