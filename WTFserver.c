@@ -27,6 +27,7 @@ char* sendFile(int , struct fileNode *);
 void send_to_client(int , char * );
 int addToList(struct fileNode**, int, char*, int, char*);
 int printDir(char*, struct fileNode**);
+int tokStringSendFiles(struct fileNode ** , char* );
 
 int main(int argc, char** argv) {
 	char server_message[256] = "You have reached the server";
@@ -121,6 +122,10 @@ int main(int argc, char** argv) {
 		if (strncmp("upgrade", buffer, 7) == 0) {
 			char* requestString = READ(client_socket);
 			printf("this is the string from client: %s\n", requestString);
+			struct fileNode* fileList = NULL;
+			int length = tokStringSendFiles(&fileList, requestString);
+			char* messageToClient = sendFile(length, fileList);
+			send_to_client(client_socket, messageToClient);
 		}
 		//hash("systems");
 	close(client_socket);
@@ -273,15 +278,21 @@ void send_to_client(int network_socket, char * string)
 }
 int addToList(struct fileNode ** head, int nameLength, char* name, int contentLength, char* contents) {
 	int counter = 1;
+	printf("good\n");
 	struct fileNode* temp = (struct fileNode*)malloc(sizeof(struct fileNode));
+	printf("good2\n");
 	temp->nameLength = nameLength;
 	temp->name = malloc(nameLength+1);
+	printf("namelength good\n");
 	strcpy(temp->name, name+7);
 	temp->name[nameLength] = '\0';
+	printf("name good\n");
 	temp->contentLength = contentLength;
 	temp->contents = malloc(contentLength+1);
+	printf("con lent good\n");
 	strcpy(temp->contents, contents);
 	temp->contents[contentLength] = '\0';
+	printf("con good\n");
 	//printf("a structnode containing %d %s %d %s will be added\n", temp->nameLength, temp->name, temp->contentLength, temp->contents); 
 	if (*head == NULL) {
 		*head = temp;
@@ -324,6 +335,25 @@ int printDir (char* directoryName, struct fileNode ** head) {
 	return fileListLen;
 }
 int tokStringSendFiles(struct fileNode ** head, char* clientString) {
-	
-	return 0;
+	int fileListLen = 0;
+	char* token = strtok(clientString, ":");
+	token = strtok(NULL, ":");
+	while (token != NULL) {
+		token = strtok(NULL, ":");
+		if (token != NULL) {
+			printf("token: %s\n", token);
+			int LENGTH = strlen(token) + strlen("server/");
+			printf("LENGTH %d\n", LENGTH);
+			char * path = malloc(LENGTH + 1);
+			strcpy(path, "server/");
+			strcat(path, token);
+			path[LENGTH] = '\0';
+			printf("path: %s\n", path);
+			int fd = open(path, O_RDONLY);
+			char* contents = readFile(fd);
+			int length = strlen(contents);
+			fileListLen = addToList(head, strlen(path), path, length, contents);
+		}
+	}
+	return fileListLen;
 }
