@@ -53,12 +53,9 @@ void deleteFromManifest(struct updateNode* , struct manifestNode** );
 void updateManifest(struct updateNode* , struct manifestNode** );
 void overWriteMan (struct manifestNode** , char* , char* , char* ) ;
 char* requestFiles(struct updateNode* );
-<<<<<<< HEAD
 int checkDir(char *);
-=======
 void writeFile(char* , char* );
 
->>>>>>> 102e2346308542f04e491e25249e055572bc0256
 int main (int args, char** argv) {
 	char client [100] = "client/";
 	//char * command;
@@ -827,7 +824,10 @@ void writeFile(char* filename, char* contents) {
 	strcpy(path, "client/");
 	strcat(path, filename);
 	if (access(path, F_OK) != -1) {
-		printf("file %s does exist\n", path);
+		remove(path);
+		mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
+		int fd = open(path,O_RDWR | O_CREAT, mode);
+		write(fd, contents, strlen(contents));
 	} else {
 		printf("%s does not exist\n", path);
 		mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;

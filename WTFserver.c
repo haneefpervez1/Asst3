@@ -29,7 +29,7 @@ int addToList(struct fileNode**, int, char*, int, char*);
 int printDir(char*, struct fileNode**);
 int printDir_contents (char* directoryName, struct fileNode ** head);
 int tokStringSendFiles(struct fileNode ** , char* );
->>>>>>> 102e2346308542f04e491e25249e055572bc0256
+
 
 int main(int argc, char** argv) {
 	char server_message[256] = "You have reached the server";
