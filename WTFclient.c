@@ -53,7 +53,12 @@ void deleteFromManifest(struct updateNode* , struct manifestNode** );
 void updateManifest(struct updateNode* , struct manifestNode** );
 void overWriteMan (struct manifestNode** , char* , char* , char* ) ;
 char* requestFiles(struct updateNode* );
+<<<<<<< HEAD
 int checkDir(char *);
+=======
+void writeFile(char* , char* );
+
+>>>>>>> 102e2346308542f04e491e25249e055572bc0256
 int main (int args, char** argv) {
 	char client [100] = "client/";
 	//char * command;
@@ -137,6 +142,21 @@ int main (int args, char** argv) {
 		printf("requestMessage %s\n", requestMessage);
 		send_to_server(network_socket, argv[1]);
 		send_to_server(network_socket, requestMessage);
+		char* newFiles = READ(network_socket);
+		printf("newFiles: %s", newFiles);
+		char *token = strtok(newFiles, ":");
+		token = strtok(NULL, ":");
+		while (token != NULL) {
+			token = strtok(NULL, ":");
+			token = strtok(NULL, ":");
+			char* filename = token;
+			token = strtok(NULL, ":");
+			token = strtok(NULL, ":");
+			char* contents = token;
+			if (filename != NULL && contents != NULL) {
+				writeFile(filename, contents);
+			}
+		}
 	}
 	close(network_socket);
 	return 0;
@@ -429,6 +449,8 @@ void compareManifests(char* manifestString, char* projName) {
 		checkAdd(serverManifest, clientManifest);
 		checkDelete(serverManifest, clientManifest);
 	}
+	free(serverManifest);
+	free(clientManifest);
 }
 
 /*
@@ -673,6 +695,8 @@ char* getUpgradeList(char* projName) {
 		printf("path: %s version: %s hash: %s\n", manifestCur->path, manifestCur->version, manifestCur->hash);
 		manifestCur = manifestCur->next;
 	}
+	free(clientManifest);
+	free(upgradeList);
 	return message;
 }
 void addUpgradeList(struct updateNode ** head, char* tag, char* path, char* hash, char* version) {
@@ -780,4 +804,35 @@ char* requestFiles(struct updateNode* head) {
 	}
 	//printf("update message from c %s\n", clientMessage);
 	return clientMessage;
+}
+void freeManifestList(struct manifestNode* head) {
+	struct manifestNode* ptr;
+	while (head != NULL) {
+		ptr = head;
+		head = head->next;
+		free(ptr);
+	}
+}
+void freeUpdateList(struct updateNode* head) {
+	struct updateNode* ptr;
+	while (head != NULL) {
+		ptr = head;
+		head = head->next;
+		free(ptr);
+	}
+}
+void writeFile(char* filename, char* contents) {
+	printf("filename: %s and contents: %s\n", filename, contents);
+	char* path = malloc(strlen("client/") +  strlen(filename) +1 );
+	strcpy(path, "client/");
+	strcat(path, filename);
+	if (access(path, F_OK) != -1) {
+		printf("file %s does exist\n", path);
+	} else {
+		printf("%s does not exist\n", path);
+		mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
+		int fd = open(path,O_RDWR | O_CREAT, mode);
+		write(fd, contents, strlen(contents));
+	}
+	
 }
