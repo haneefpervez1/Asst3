@@ -101,15 +101,24 @@ int main(int argc, char** argv) {
 			char* path = malloc(strlen(projName) + strlen("server/") + strlen("/manifest.txt") + 1);
 			strcpy(path, "server/");
 			strcat(path, projName);
+			strcat(path, "/manifest.txt");
 			printf("path: %s\n", path);
-			
+			int fd = open(path , O_RDONLY);
+			printf("file desc %d\n", fd);
+			char* string = readFile(fd);
+			struct fileNode * head = NULL;
+			int length = addToList(&head, strlen(path), path, strlen(string), string);
+			char* serverMessage = sendFile(length, head);
+			send_to_client(client_socket, serverMessage);
+			/*
 			struct fileNode* fileList= NULL;
 			int length = printDir(path, &fileList);
-			//printf("fileList length is %d\n", length);
+			printf("fileList length is %d\n", length);
 			char* manifestMessage = sendFile(length, fileList);
-			send_to_client(client_socket, manifestMessage);
+			send_to_client(client_socket, manifestMessage);*/
 		}
 		//hash("systems");
+	close(client_socket);
 	close(server_socket);
 	return 0;
 }
@@ -163,11 +172,11 @@ char* readFile (int fd) {
 	while(x != 0)
 	{
 		x = read(fd, buff, 1);
-		if(buff[0]!='\n')
-		{
+	//	if(buff[0]!='\n')
+	//	{
 			//printf("%c\n", string[i]);
 			string[i]=buff[0];
-		} 
+	//	} 
 		i++;
 	}
 	

@@ -13,11 +13,11 @@
 #include <arpa/inet.h>
 #include <ctype.h>
 
-struct manifest{
+struct manifestNode{
 	char * path;
-	int version;
-	int hash;
-	struct manifest * next;
+	char* version;
+	char* hash;
+	struct manifestNode * next;
 };
 
 int configure(char*, char*);
@@ -28,6 +28,10 @@ void read_string(char *);
 char* hash (char *);
 void send_to_server(int, char *);
 char * READ(int);
+void compareManifests(char* , char* );
+void addManifestList(struct manifestNode ** , char* , char* , char* );
+char* readLine(int);
+char* readFile (int );
 
 int main (int args, char** argv) {
 	char client [100] = "client/";
@@ -102,7 +106,8 @@ int main (int args, char** argv) {
 		send_to_server(network_socket, argv[2]);
 		char* string = READ(network_socket);
 		printf("contents of manifest: %s\n", string);
-		read_string(string);
+		compareManifests(string, argv[2]);
+		//read_string(string);
 		//printf("manifest %s\n", manifestString);
 		//char updateMessage[256];
 		//read(network_socket, &updateMessage, sizeof(updateMessage));
@@ -171,20 +176,34 @@ char* readFile (int fd) {
 	int i=1;
 	char buff[1];
 	int x = read(fd, buff, 1);
-	char string[10000];
+	char* string = malloc(10000);
 	string[0]=buff[0]; 
-	char* stringPtr = string;
 	while(x != 0)
 	{
 		x = read(fd, buff, 1);
-		if(buff[0]!='\n')
-		{
+		//if(buff[0]!='\n')
+	//	{
 			string[i]=buff[0];
-		} 
+		//} 
 		i++;
 	}
 	
-	return stringPtr;
+	return string;
+}
+char* readLine(int fd) {
+	int i = 1;
+	char* buff = malloc(1);
+	int x = read(fd,buff,1);
+	char* string = malloc(10000);
+	string[0] = buff[0];
+	//char* stringPtr = string;
+	while (buff[0] != '\n' && x != 0) {
+		x = read(fd, buff, 1);
+		string[i] = buff[0];
+		i++;
+	}
+	string[i-1] = '\0';
+	return string; 
 }
 /*int is_digit(char * string)
 {
@@ -241,14 +260,10 @@ void addFile (char* projName, char* filename) {				// still need to deal with if
 	strcat(path, filename);
 	int fd = open(path, O_RDONLY);
 	char* string = readFile(fd);
+	printf("string: %s\n", string);
 	char* hashString = hash(string);
 	printf("new file: %s fd: %d\nThese are the contents: %s\n", path, fd, hashString);
-	int manifestLength = strlen(filename) + strlen(hashString) + strlen("0");
-	char* manifestLine = malloc(manifestLength + 3);
-	strcpy(manifestLine, filename);
-	strcat(manifestLine, " 0 ");
-	strcat(manifestLine, hashString);
-	printf("full line:\n%s", manifestLine);
+
 	char* manifestPath = malloc(strlen(projName) + 14 +strlen("client/"));
 	strcpy(manifestPath, "client/");
 	strcat(manifestPath, projName);
@@ -260,6 +275,26 @@ void addFile (char* projName, char* filename) {				// still need to deal with if
 	
 	char buff[1];
 	int x = read(fileD, buff, 1);
+	char* firstLine = malloc(20);
+	if (x == 0 ) {
+		write(fileD, "a0\n", strlen("a0\n"));
+		printf("manifest is empty\n");
+		strcpy(firstLine, "0");
+	} else {
+		firstLine = readLine(fileD);
+		printf("first fucking line %s\n", firstLine);
+		int version = atoi(firstLine);
+		printf("version: %d\n", version);
+	}
+	int manifestLength = strlen(filename) + strlen(hashString) + strlen(firstLine);
+	char* manifestLine = malloc(manifestLength + 3);
+	strcpy(manifestLine, filename);
+	strcat(manifestLine, " ");
+	strcat(manifestLine, firstLine);
+	printf("first line: %s\n", firstLine);
+	strcat(manifestLine, " ");
+	strcat(manifestLine, hashString);
+	printf("full line:\n%s", manifestLine);
 	while(x != 0)
 	{
 		x = read(fileD, buff, 1);
@@ -309,4 +344,69 @@ char * READ(int client_socket){
 	read(client_socket, buffer, num+1);
 	printf("sent from server %s\n", buffer);
 	return buffer;
+}
+void compareManifests(char* manifestString, char* projName) {
+	printf("The manifest from %s will be compared with\n%s", projName, manifestString);
+	char* token = strtok(manifestString+1, " \n");
+	struct manifestNode * serverManifest = NULL;
+	while (token != NULL) {
+		token = strtok(NULL, " \n");
+		char* path = token;
+		token = strtok(NULL, " \n");
+		char* version = token;
+		token = strtok(NULL, " \n");
+		char* hash = token;
+	
+		if (path != NULL) {
+			addManifestList(&serverManifest, path, version, hash);
+		}
+	}
+	char* path = malloc(strlen("client/") + strlen(projName) + strlen("/manifest.txt") + 1);
+	strcpy(path, "client/");
+	strcat(path, projName);
+	strcat(path, "/manifest.txt");
+	path[strlen("client/") + strlen(projName) + strlen("/manifest.txt")] = '\0';
+	printf("path: %s\n", path);
+	int fd = open(path, O_RDONLY);
+	char* otherManifest = readFile(fd);
+	printf("manifestfile string %s\n", otherManifest);
+	char* token2 = strtok(otherManifest+1, " \n");
+	struct manifestNode * serverManifest2 = NULL;
+	while (token2 != NULL) {
+		token2 = strtok(NULL, " \n");
+		char* path = token2;
+		token2 = strtok(NULL, " \n");
+		char* version = token2;
+		token2 = strtok(NULL, " \n");
+		char* hash = token2;
+	
+		if (path != NULL) {
+			addManifestList(&serverManifest2, path, version, hash);
+		}
+	}
+	
+}
+void addManifestList(struct manifestNode ** head, char* path, char* version, char* hash) {
+	struct manifestNode* temp = (struct manifestNode*)malloc(sizeof(struct manifestNode));
+	temp->path = malloc(strlen(path)+1);
+	strcpy(temp->path, path);
+	temp->path[strlen(path)] = '\0';
+	temp->version = malloc(strlen(version)+1);
+	strcpy(temp->version, version);
+	temp->version[strlen(version)] = '\0';
+	temp->hash = malloc(strlen(hash)+1);
+	strcpy(temp->hash, hash);
+	temp->hash[strlen(hash)] = '\0';
+	printf("the node contains %s %s %s\n", path, version, hash);
+	if (*head == NULL) {
+		*head = temp;
+	} else {
+		struct manifestNode * ptr = *head;
+		while (ptr->next != NULL) {
+			ptr = ptr->next;
+			//counter++;
+		}
+		//counter++;
+		ptr->next = temp;
+	}
 }
