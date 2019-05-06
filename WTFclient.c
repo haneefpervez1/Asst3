@@ -32,6 +32,12 @@ void compareManifests(char* , char* );
 void addManifestList(struct manifestNode ** , char* , char* , char* );
 char* readLine(int);
 char* readFile (int );
+void checkUpLoad(struct manifestNode * , struct manifestNode * );
+int checkIfPresent (struct manifestNode* , struct manifestNode*, char* );
+int getClientFilePath(char* );
+void checkModify(struct manifestNode * , struct manifestNode * );
+void checkAdd(struct manifestNode * , struct manifestNode * );
+void checkDelete(struct manifestNode * , struct manifestNode * );
 
 int main (int args, char** argv) {
 	char client [100] = "client/";
@@ -105,7 +111,7 @@ int main (int args, char** argv) {
 		send_to_server(network_socket, argv[1]);
 		send_to_server(network_socket, argv[2]);
 		char* string = READ(network_socket);
-		printf("contents of manifest: %s\n", string);
+		//printf("contents of manifest: %s\n", string);
 		compareManifests(string, argv[2]);
 		//read_string(string);
 		//printf("manifest %s\n", manifestString);
@@ -277,18 +283,15 @@ void addFile (char* projName, char* filename) {				// still need to deal with if
 	int x = read(fileD, buff, 1);
 	char* firstLine = malloc(20);
 	if (x == 0 ) {
-		write(fileD, "a0\n", strlen("a0\n"));
+		write(fileD, "$0\n", strlen("$0\n"));
 		printf("manifest is empty\n");
 		strcpy(firstLine, "0");
 	} else {
 		firstLine = readLine(fileD);
-		printf("first fucking line %s\n", firstLine);
-		int version = atoi(firstLine);
-		printf("version: %d\n", version);
 	}
-	int manifestLength = strlen(filename) + strlen(hashString) + strlen(firstLine);
+	int manifestLength = strlen(path+7) + strlen(hashString) + strlen(firstLine);
 	char* manifestLine = malloc(manifestLength + 3);
-	strcpy(manifestLine, filename);
+	strcpy(manifestLine, path+7);
 	strcat(manifestLine, " ");
 	strcat(manifestLine, firstLine);
 	printf("first line: %s\n", firstLine);
@@ -345,9 +348,18 @@ char * READ(int client_socket){
 	printf("sent from server %s\n", buffer);
 	return buffer;
 }
+/*
+	compares server and client manifests
+*/
 void compareManifests(char* manifestString, char* projName) {
-	printf("The manifest from %s will be compared with\n%s", projName, manifestString);
+	//printf("The manifest from %s will be compared with\n%s", projName, manifestString);
 	char* token = strtok(manifestString+1, " \n");
+	int i = 0;
+	while (token[i] != '$' ) {
+		i++;
+	}
+	printf("version: %s\n", token+i+1);
+	char* serverVersion = token+i+1;
 	struct manifestNode * serverManifest = NULL;
 	while (token != NULL) {
 		token = strtok(NULL, " \n");
@@ -366,12 +378,14 @@ void compareManifests(char* manifestString, char* projName) {
 	strcat(path, projName);
 	strcat(path, "/manifest.txt");
 	path[strlen("client/") + strlen(projName) + strlen("/manifest.txt")] = '\0';
-	printf("path: %s\n", path);
+	printf("client manifest\n");
 	int fd = open(path, O_RDONLY);
 	char* otherManifest = readFile(fd);
-	printf("manifestfile string %s\n", otherManifest);
+	//printf("manifestfile string %s\n", otherManifest);
 	char* token2 = strtok(otherManifest+1, " \n");
-	struct manifestNode * serverManifest2 = NULL;
+	printf("version: %s\n", token2);
+	char* clientVersion = token2;
+	struct manifestNode * clientManifest = NULL;
 	while (token2 != NULL) {
 		token2 = strtok(NULL, " \n");
 		char* path = token2;
@@ -381,10 +395,63 @@ void compareManifests(char* manifestString, char* projName) {
 		char* hash = token2;
 	
 		if (path != NULL) {
-			addManifestList(&serverManifest2, path, version, hash);
+			addManifestList(&clientManifest, path, version, hash);
 		}
 	}
-	
+	if (strcmp(serverVersion, clientVersion) == 0) {
+		checkUpLoad(serverManifest, clientManifest);
+	} else {
+		checkModify(serverManifest, clientManifest);
+		checkAdd(serverManifest, clientManifest);
+		checkDelete(serverManifest, clientManifest);
+	}
+}
+/*
+	checking if file should be uploaded
+*/
+void checkUpLoad(struct manifestNode * serverManifest, struct manifestNode * clientManifest) {
+	//printf("in check upload method\n");
+	struct manifestNode *clientPtr = clientManifest;
+	while (clientPtr != NULL) {
+		if (checkIfPresent(clientPtr, serverManifest, "upload") == 0) {
+			printf("U %s\n", clientPtr->path);	
+		}
+		clientPtr = clientPtr->next;
+	}
+}
+/*
+	checks if path is present 
+*/
+int checkIfPresent (struct manifestNode* clientNode, struct manifestNode* head, char* operation) {
+	struct manifestNode* ptr = head;
+	while (ptr != NULL) {
+		if (strcmp(clientNode->path, ptr->path) == 0) {
+			if (strcmp(operation, "upload") == 0){
+				int fd = getClientFilePath(clientNode->path);
+				char* string = readFile(fd);
+				char* hashString = hash(string);
+				//printf("serverNode: %s hashString %s\n", ptr->hash, hashString);
+				if (strcmp(ptr->hash, hashString) != 0) {
+					return 0;
+				}
+			} else if (strcmp(operation, "modify") == 0) {
+				int fd = getClientFilePath(clientNode->path);
+				char* string = readFile(fd);
+				char* hashString = hash(string);
+				if (strcmp(clientNode->hash, hashString) == 0) {
+					if (strcmp(ptr->version, clientNode->version) != 0) {
+						return 0;
+					}
+				}
+			}
+			return 1;
+		}
+		ptr = ptr->next;
+	}
+	if (strcmp(operation, "upload") == 0 || strcmp(operation, "add") == 0 || strcmp(operation, "delete") == 0) {
+		return 0;
+	}
+	return 1;
 }
 void addManifestList(struct manifestNode ** head, char* path, char* version, char* hash) {
 	struct manifestNode* temp = (struct manifestNode*)malloc(sizeof(struct manifestNode));
@@ -409,4 +476,42 @@ void addManifestList(struct manifestNode ** head, char* path, char* version, cha
 		//counter++;
 		ptr->next = temp;
 	}
+}
+void checkModify(struct manifestNode * serverManifest, struct manifestNode * clientManifest) {
+	struct manifestNode *clientPtr = clientManifest;
+	while (clientPtr != NULL) {
+		if (checkIfPresent(clientPtr, serverManifest, "modify") == 0) {
+			printf("M %s\n", clientPtr->path);	
+		}
+		clientPtr = clientPtr->next;
+	}
+}
+void checkAdd(struct manifestNode * serverManifest, struct manifestNode * clientManifest) {
+	struct manifestNode *serverPtr = serverManifest;
+	while (serverPtr != NULL) {
+		if (checkIfPresent(serverPtr, clientManifest, "add") == 0) {
+			printf("A %s\n", serverPtr->path);	
+		}
+		serverPtr = serverPtr->next;
+	}
+}
+void checkDelete(struct manifestNode * serverManifest, struct manifestNode * clientManifest) {
+	struct manifestNode *clientPtr = clientManifest;
+	while (clientPtr != NULL) {
+		if (checkIfPresent(clientPtr, serverManifest, "delete") == 0) {
+			printf("D %s\n", clientPtr->path);	
+		}
+		clientPtr = clientPtr->next;
+	}
+}
+int getClientFilePath(char* filename) {
+	char* path = malloc(strlen("client/") +  strlen(filename) +1 );
+	strcpy(path, "client/");
+	strcat(path, filename);
+	//printf("path: %s\n", path);
+	int fd = open(path, O_RDONLY);
+	if (fd > 0) {
+		//printf("file has been successfully opened\n");
+	}
+	return fd;
 }
