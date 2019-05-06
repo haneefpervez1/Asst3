@@ -38,6 +38,7 @@ int getClientFilePath(char* );
 void checkModify(struct manifestNode * , struct manifestNode * );
 void checkAdd(struct manifestNode * , struct manifestNode * );
 void checkDelete(struct manifestNode * , struct manifestNode * );
+int openUpdate(char* );
 
 int main (int args, char** argv) {
 	char client [100] = "client/";
@@ -414,7 +415,7 @@ void checkUpLoad(struct manifestNode * serverManifest, struct manifestNode * cli
 	struct manifestNode *clientPtr = clientManifest;
 	while (clientPtr != NULL) {
 		if (checkIfPresent(clientPtr, serverManifest, "upload") == 0) {
-			printf("U %s\n", clientPtr->path);	
+			printf("U %s %s\n", clientPtr->path, clientPtr->hash);	
 		}
 		clientPtr = clientPtr->next;
 	}
@@ -481,7 +482,18 @@ void checkModify(struct manifestNode * serverManifest, struct manifestNode * cli
 	struct manifestNode *clientPtr = clientManifest;
 	while (clientPtr != NULL) {
 		if (checkIfPresent(clientPtr, serverManifest, "modify") == 0) {
-			printf("M %s\n", clientPtr->path);	
+			printf("M %s %s\n", clientPtr->path, clientPtr->hash);	
+			int fd = openUpdate(clientPtr->path);
+			char buff[1];
+			int x = read(fd, buff, 1);
+			while (x != 0) {
+				x = read(fd, buff, 1);
+			}
+			write(fd, "M ", strlen("M "));	
+			write(fd, clientPtr->path, strlen(clientPtr->path));
+			write(fd, " ", strlen(" "));
+			write(fd, clientPtr->hash, strlen(clientPtr->hash));
+			write(fd, "\n", strlen("\n"));
 		}
 		clientPtr = clientPtr->next;
 	}
@@ -490,7 +502,18 @@ void checkAdd(struct manifestNode * serverManifest, struct manifestNode * client
 	struct manifestNode *serverPtr = serverManifest;
 	while (serverPtr != NULL) {
 		if (checkIfPresent(serverPtr, clientManifest, "add") == 0) {
-			printf("A %s\n", serverPtr->path);	
+			printf("A %s %s\n", serverPtr->path, serverPtr->hash);	
+			int fd = openUpdate(serverPtr->path);
+			char buff[1];
+			int x = read(fd, buff, 1);
+			while (x != 0) {
+				x = read(fd, buff, 1);
+			}
+			write(fd, "A ", strlen("A "));	
+			write(fd, serverPtr->path, strlen(serverPtr->path));
+			write(fd, " ", strlen(" "));
+			write(fd, serverPtr->hash, strlen(serverPtr->hash));
+			write(fd, "\n", strlen("\n"));
 		}
 		serverPtr = serverPtr->next;
 	}
@@ -499,7 +522,18 @@ void checkDelete(struct manifestNode * serverManifest, struct manifestNode * cli
 	struct manifestNode *clientPtr = clientManifest;
 	while (clientPtr != NULL) {
 		if (checkIfPresent(clientPtr, serverManifest, "delete") == 0) {
-			printf("D %s\n", clientPtr->path);	
+			printf("D %s %s\n", clientPtr->path, clientPtr->hash);
+			int fd = openUpdate(clientPtr->path);
+			char buff[1];
+			int x = read(fd, buff, 1);
+			while (x != 0) {
+				x = read(fd, buff, 1);
+			}
+			write(fd, "D ", strlen("D "));	
+			write(fd, clientPtr->path, strlen(clientPtr->path));
+			write(fd, " ", strlen(" "));
+			write(fd, clientPtr->hash, strlen(clientPtr->hash));
+			write(fd, "\n", strlen("\n"));
 		}
 		clientPtr = clientPtr->next;
 	}
@@ -513,5 +547,20 @@ int getClientFilePath(char* filename) {
 	if (fd > 0) {
 		//printf("file has been successfully opened\n");
 	}
+	return fd;
+}
+int openUpdate(char* filename) {
+	int i = 0;
+	while(filename[i] != '/') {
+		i++;
+	}
+	char* projName = malloc(i+1);
+	strncpy(projName, filename, i);
+	char* path = malloc(strlen("client/") +  strlen(projName) + strlen("/.Update") + 1);
+	strcpy(path, "client/");
+	strcat(path, projName);
+	strcat(path, "/.Update");
+	mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
+	int fd = open(path,O_RDWR | O_CREAT, mode);
 	return fd;
 }
