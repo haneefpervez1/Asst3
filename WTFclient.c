@@ -20,6 +20,13 @@ struct manifestNode{
 	struct manifestNode * next;
 };
 
+struct updateNode {
+	char* tag;
+	char* path;
+	char* hash;
+	struct updateNode* next;
+};
+
 int configure(char*, char*);
 int getPortNum();
 void addFile(char*, char*);
@@ -39,6 +46,9 @@ void checkModify(struct manifestNode * , struct manifestNode * );
 void checkAdd(struct manifestNode * , struct manifestNode * );
 void checkDelete(struct manifestNode * , struct manifestNode * );
 int openUpdate(char* );
+struct updateNode* getUpgradeList(char* ); 
+void addUpgradeList(struct updateNode ** , char* , char* , char* );
+void deleteFromManifest(struct updateNode* , struct manifestNode** );
 
 int main (int args, char** argv) {
 	char client [100] = "client/";
@@ -124,6 +134,9 @@ int main (int args, char** argv) {
 		}
 		char* manifestString = READ(network_socket);
 		printf("manifest %s\n", manifestString);*/
+	}
+	if (strcmp(argv[1], "upgrade") == 0) {
+		getUpgradeList(argv[2]);
 	}
 	close(network_socket);
 	return 0;
@@ -407,6 +420,7 @@ void compareManifests(char* manifestString, char* projName) {
 		checkDelete(serverManifest, clientManifest);
 	}
 }
+
 /*
 	checking if file should be uploaded
 */
@@ -542,13 +556,16 @@ int getClientFilePath(char* filename) {
 	char* path = malloc(strlen("client/") +  strlen(filename) +1 );
 	strcpy(path, "client/");
 	strcat(path, filename);
-	//printf("path: %s\n", path);
+	printf("path: %s\n", path);
 	int fd = open(path, O_RDONLY);
 	if (fd > 0) {
 		//printf("file has been successfully opened\n");
 	}
 	return fd;
 }
+/*
+	creates .Update file and returns file desc
+*/
 int openUpdate(char* filename) {
 	int i = 0;
 	while(filename[i] != '/') {
@@ -563,4 +580,122 @@ int openUpdate(char* filename) {
 	mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
 	int fd = open(path,O_RDWR | O_CREAT, mode);
 	return fd;
+}
+struct updateNode* getUpgradeList(char* projName) {
+	char* updatePath = malloc(strlen(projName) + strlen("/.Update") + 1);
+	strcpy(updatePath, projName);
+	strcat(updatePath, "/.Update");
+	int fd = getClientFilePath(updatePath);
+	char* contents = readFile(fd);
+	//printf("update contents %s\n", contents);
+	char* token = strtok(contents, " \n");
+	char* tag = token;
+	printf("tag: %s\n", tag);
+	token = strtok(NULL, " \n");
+	char* path = token;
+	printf("path: %s\n", path);
+	token = strtok(NULL, " \n");
+	char* hash = token;
+	printf("hash: %s\n", hash);
+	struct updateNode * upgradeList = NULL;
+	addUpgradeList(&upgradeList, tag, path, hash);
+	while (token != NULL) {
+		token = strtok(NULL, " \n");
+		tag = token;
+		printf("tag: %s\n", tag);
+		token = strtok(NULL, " \n");
+		path = token;
+		printf("path: %s\n", path);
+		token = strtok(NULL, " \n");
+		hash = token;
+		printf("hash: %s\n", hash);
+	
+		if (tag != NULL) {
+			addUpgradeList(&upgradeList, tag, path, hash);
+		}
+	
+	}
+	char* manifestPath = malloc(strlen("client/") + strlen(projName) + strlen("/manifest.txt") + 1);
+	strcpy(manifestPath, "client/");
+	strcat(manifestPath, projName);
+	strcat(manifestPath, "/manifest.txt");
+	manifestPath[strlen("client/") + strlen(projName) + strlen("/manifest.txt")] = '\0';
+	printf("client manifest\n");
+	int manfd = open(manifestPath, O_RDONLY);
+	char* otherManifest = readFile(manfd);
+	//printf("manifestfile string %s\n", otherManifest);
+	char* token2 = strtok(otherManifest+1, " \n");
+	//printf("version: %s\n", token2);
+	//char* clientVersion = token2;
+	struct manifestNode * clientManifest = NULL;
+	while (token2 != NULL) {
+		token2 = strtok(NULL, " \n");
+		char* path = token2;
+		token2 = strtok(NULL, " \n");
+		char* version = token2;
+		token2 = strtok(NULL, " \n");
+		char* hash = token2;
+	
+		if (path != NULL) {
+			addManifestList(&clientManifest, path, version, hash);
+		}
+	}
+	deleteFromManifest(upgradeList, &clientManifest);
+	struct manifestNode * manifestCur = clientManifest;
+	while (manifestCur != NULL) {
+		printf("path: %s version: %s hash: %s\n", manifestCur->path, manifestCur->version, manifestCur->hash);
+		manifestCur = manifestCur->next;
+	}
+	return NULL;
+}
+void addUpgradeList(struct updateNode ** head, char* tag, char* path, char* hash) {
+	struct updateNode* temp = (struct updateNode*)malloc(sizeof(struct updateNode));
+	temp->tag = malloc(strlen(tag)+1);
+	strcpy(temp->tag, tag);
+	temp->tag[strlen(tag)] = '\0';
+	temp->path = malloc(strlen(path)+1);
+	strcpy(temp->path, path);
+	temp->path[strlen(path)] = '\0';
+	temp->hash = malloc(strlen(hash)+1);
+	strcpy(temp->hash, hash);
+	temp->hash[strlen(hash)] = '\0';
+	printf("the node contains %s %s %s\n", tag, path, hash);
+	if (*head == NULL) {
+		*head = temp;
+	} else {
+		struct updateNode * ptr = *head;
+		while (ptr->next != NULL) {
+			ptr = ptr->next;
+			//counter++;
+		}
+		//counter++;
+		ptr->next = temp;
+	}
+	
+}
+void deleteFromManifest(struct updateNode* upgradeList, struct manifestNode** manifestList) {
+	struct updateNode* updatePtr = upgradeList;
+	char* fileToBeDeleted;
+	while (updatePtr != NULL) {
+		if (strcmp(updatePtr->tag, "D") == 0) {
+			fileToBeDeleted = malloc(strlen(updatePtr->path)+1);
+			fileToBeDeleted = updatePtr->path;
+		}
+		updatePtr = updatePtr->next;
+	}
+
+	struct manifestNode * manifestCur = *manifestList;
+	struct manifestNode * manifestPrev = NULL;
+	if (manifestCur != NULL && strcmp(manifestCur->path, fileToBeDeleted) == 0) {
+		*manifestList = manifestCur->next;
+		free(manifestCur);
+		return;
+	}
+	while (manifestCur != NULL && strcmp(manifestCur->path, fileToBeDeleted) != 0) {
+		manifestPrev = manifestCur;
+		manifestCur = manifestCur->next;
+	}
+	printf("node containing %s will be deleted\n", manifestCur->path);
+	manifestPrev->next = manifestCur->next;
+	free(manifestCur);
 }
