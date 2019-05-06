@@ -9,6 +9,7 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <openssl/sha.h>
+#include <ctype.h>
 
 struct fileNode {
 	int nameLength;
@@ -117,6 +118,10 @@ int main(int argc, char** argv) {
 			char* manifestMessage = sendFile(length, fileList);
 			send_to_client(client_socket, manifestMessage);*/
 		}
+		if (strncmp("upgrade", buffer, 7) == 0) {
+			char* requestString = READ(client_socket);
+			printf("this is the string from client: %s\n", requestString);
+		}
 		//hash("systems");
 	close(client_socket);
 	close(server_socket);
@@ -139,11 +144,12 @@ char * READ(int client_socket){
 	printf("%s\n", length);
 	printf("Length Received: %d\n", num);
 	//char *buffer = malloc(sizeof(chcar) * num);
-	char buffer[num];
-	char * temp = buffer;
+	//char buffer[num];
+	char* buffer = malloc(num+1);
+	//char * temp = buffer;
 	read(client_socket, buffer, num+1);
 	printf("%s\n", buffer);
-	return temp;
+	return buffer;
 }
 
 char* hash (char * contents) {
@@ -316,4 +322,8 @@ int printDir (char* directoryName, struct fileNode ** head) {
 	}
 	printf("printdir filelist len : %d\n", fileListLen);
 	return fileListLen;
+}
+int tokStringSendFiles(struct fileNode ** head, char* clientString) {
+	
+	return 0;
 }

@@ -47,11 +47,12 @@ void checkModify(struct manifestNode * , struct manifestNode * );
 void checkAdd(struct manifestNode * , struct manifestNode * );
 void checkDelete(struct manifestNode * , struct manifestNode * );
 int openUpdate(char* );
-struct updateNode* getUpgradeList(char* ); 
+char* getUpgradeList(char* ); 
 void addUpgradeList(struct updateNode ** , char* , char* , char*,char* );
 void deleteFromManifest(struct updateNode* , struct manifestNode** );
 void updateManifest(struct updateNode* , struct manifestNode** );
 void overWriteMan (struct manifestNode** , char* , char* , char* ) ;
+char* requestFiles(struct updateNode* );
 
 int main (int args, char** argv) {
 	char client [100] = "client/";
@@ -127,19 +128,12 @@ int main (int args, char** argv) {
 		char* string = READ(network_socket);
 		//printf("contents of manifest: %s\n", string);
 		compareManifests(string, argv[2]);
-		//read_string(string);
-		//printf("manifest %s\n", manifestString);
-		//char updateMessage[256];
-		//read(network_socket, &updateMessage, sizeof(updateMessage));
-		/*printf("update message: %s\n", updateMessage);
-		if (strcmp(updateMessage, "update command received") == 0) {
-			send_to_server(network_socket, argv[2]);
-		}
-		char* manifestString = READ(network_socket);
-		printf("manifest %s\n", manifestString);*/
 	}
 	if (strcmp(argv[1], "upgrade") == 0) {
-		getUpgradeList(argv[2]);
+		char* requestMessage = getUpgradeList(argv[2]);
+		printf("requestMessage %s\n", requestMessage);
+		send_to_server(network_socket, argv[1]);
+		send_to_server(network_socket, requestMessage);
 	}
 	close(network_socket);
 	return 0;
@@ -594,7 +588,7 @@ int openUpdate(char* filename) {
 	int fd = open(path,O_RDWR | O_CREAT, mode);
 	return fd;
 }
-struct updateNode* getUpgradeList(char* projName) {
+char* getUpgradeList(char* projName) {
 	char* updatePath = malloc(strlen(projName) + strlen("/.Update") + 1);
 	strcpy(updatePath, projName);
 	strcat(updatePath, "/.Update");
@@ -644,8 +638,6 @@ struct updateNode* getUpgradeList(char* projName) {
 	char* otherManifest = readFile(manfd);
 	//printf("manifestfile string %s\n", otherManifest);
 	char* token2 = strtok(otherManifest+1, " \n");
-	//printf("version: %s\n", token2);
-	//char* clientVersion = token2;
 	struct manifestNode * clientManifest = NULL;
 	while (token2 != NULL) {
 		token2 = strtok(NULL, " \n");
@@ -661,13 +653,14 @@ struct updateNode* getUpgradeList(char* projName) {
 	}
 	deleteFromManifest(upgradeList, &clientManifest);
 	updateManifest(upgradeList, &clientManifest);
+	char* message = requestFiles(upgradeList);
 	struct manifestNode * manifestCur = clientManifest;
 	printf("----this is the manifest list ----------\n");
 	while (manifestCur != NULL) {
 		printf("path: %s version: %s hash: %s\n", manifestCur->path, manifestCur->version, manifestCur->hash);
 		manifestCur = manifestCur->next;
 	}
-	return NULL;
+	return message;
 }
 void addUpgradeList(struct updateNode ** head, char* tag, char* path, char* hash, char* version) {
 	struct updateNode* temp = (struct updateNode*)malloc(sizeof(struct updateNode));
@@ -743,4 +736,35 @@ void overWriteMan (struct manifestNode** manifestList, char* path, char* version
 	strcpy(ptr->version, version);
 	ptr->version[strlen(version)] = '\0';
 	strcpy(ptr->hash, hash);
+}
+/*
+
+*/
+char* requestFiles(struct updateNode* head) {	
+	struct updateNode* ptr = head;
+	int counter = 0;
+	int length = 0;
+	while (ptr != NULL) {
+		if (strcmp(ptr->tag, "A") == 0 || strcmp(ptr->tag, "M") == 0) {
+			length += strlen(ptr->path) + 1;
+			counter++;
+		}
+		ptr = ptr->next;
+	}
+	char buffer[10];
+	sprintf(buffer, "%d", counter);
+	//printf("length: %d buffer %s\n", length, buffer);
+	char* clientMessage = malloc(length + strlen(buffer)+3);
+	strcpy(clientMessage, "r:");
+	strcat(clientMessage, buffer);
+	ptr = head;
+	while (ptr != NULL) {
+		if (strcmp(ptr->tag, "A") == 0 || strcmp(ptr->tag, "M") == 0) {
+			strcat(clientMessage, ":");
+			strcat(clientMessage, ptr->path);			
+		}
+		ptr = ptr->next;
+	}
+	//printf("update message from c %s\n", clientMessage);
+	return clientMessage;
 }
