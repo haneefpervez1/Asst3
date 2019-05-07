@@ -83,7 +83,7 @@ int main (int args, char** argv) {
 	struct sockaddr_in server_address;
 	server_address.sin_family = AF_INET;
 	server_address.sin_port = htons(port);
-	server_address.sin_addr.s_addr = inet_addr(gethostbyname(hostName));
+	server_address.sin_addr.s_addr = INADDR_ANY;
 	
 	int connection_status = connect(network_socket, (struct sockaddr *) &server_address, sizeof(server_address));
 	if (connection_status != 0) {
@@ -117,24 +117,32 @@ int main (int args, char** argv) {
 	
 	if (strcmp(argv[1], "create")==0)
 	{
-	 char * createmsg = malloc(sizeof(argv[2])+1);
+	
+	// printf("in create\n");
+	// char * createmsg = malloc(sizeof(argv[2])+1);
 	 char direct[100];
-	 char choice [100];
+	 //cchar choice [100];
 	 char path [100];
-	 strcpy(createmsg, argv[2]);
-	 printf("%s", createmsg);
-	 write(network_socket, createmsg, sizeof(createmsg));
-	 read(network_socket, choice, sizeof(choice));
-	 if(choice[0]=='c')
+	// strcpy(createmsg, argv[2]);
+	// printf("%s", createmsg);
+	// write(network_socket, createmsg, sizeof(createmsg));
+	 send_to_server(network_socket, argv[1]);
+	 send_to_server(network_socket, argv[2]);
+	 char* response = READ(network_socket);
+	 printf("response: %s\n", response);
+	// read(network_socket, choice, sizeof(choice));
+	
+	 if(strcmp(response, "created") == 0 )
 	 {
 	  strcpy(direct, client);
-	  strcat(direct, createmsg);
+	  strcat(direct, argv[2]);
 	  mkdir(direct, 0700);
 	  strcpy(path, direct);
 	  strcat(path, "/.Manifest");
 	  mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
 	  open(path,O_RDWR | O_CREAT, mode);
 	 }
+	
 	}
 	if (strcmp(argv[1], "add") == 0) {
 		addFile(argv[2], argv[3]);
@@ -166,7 +174,14 @@ int main (int args, char** argv) {
 				writeFile(filename, contents);
 			}
 		}
+		char* updatePath = malloc(strlen("client/") + strlen(argv[2]) + strlen("/.Update") + 1);
+		strcpy(updatePath, "client/");
+		strcpy(updatePath, argv[2]);
+		strcpy(updatePath, "/.Update");
+		updatePath[strlen("client/") + strlen(argv[2]) + strlen("/.Update")] = '\0';
+		printf("updatePath: %s\n", updatePath);
 	}
+	//clwriteFile("newProj/file4.txt", "this is from the c program");
 	close(network_socket);
 	return 0;
 }
@@ -663,6 +678,7 @@ char* getUpgradeList(char* projName) {
 	manifestPath[strlen("client/") + strlen(projName) + strlen("/.Manifest")] = '\0';
 	printf("client manifest\n");
 	int manfd = open(manifestPath, O_RDONLY);
+	printf("manfd: %d\n", manfd);
 	char* otherManifest = readFile(manfd);
 	//printf("manifestfile string %s\n", otherManifest);
 	char* token2 = strtok(otherManifest+1, " \n");

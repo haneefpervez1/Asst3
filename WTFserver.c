@@ -62,6 +62,9 @@ int main(int argc, char** argv) {
 		write(client_socket, server_message, sizeof(server_message));
 	// ------------------------------------------------------------------------>
 		char * buffer = READ(client_socket);
+		if (strncmp("create", buffer, 6) == 0 ) {
+			create_server(client_socket);
+		}
 		if(strncmp("checkout",buffer, 8)==0)
 		{
 			char * project = READ(client_socket);
@@ -202,8 +205,8 @@ char* readFile (int fd) {
 }
 void create_server(int client_socket)
 {
-		char project[256];
-		read(client_socket, project, sizeof(project));
+		char* project = READ(client_socket);
+		printf("this is the project %s\n", project);
 		struct stat st = {0};
 		if(stat(project, &st) ==-1)
 		{
@@ -217,12 +220,13 @@ void create_server(int client_socket)
 		 printf("%s\n", project);
 		 //printf("%s", directory);
 		 mkdir(directory, 0700);
+		 printf("%s\n", directory);
 		 char manifest[1000];
 		 strcpy(manifest, directory);
 		 strcat(manifest, "/");
 		 char * path = strcat(manifest, ".Manifest");
 		 open(path, O_RDWR | O_CREAT, mode);
-		 write(client_socket, "created", sizeof("created"));
+		 send_to_client(client_socket, "created");
 		}
 		else
 		{
