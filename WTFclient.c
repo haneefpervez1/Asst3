@@ -58,6 +58,8 @@ void overWriteMan (struct manifestNode** , char* , char* , char* ) ;
 char* requestFiles(struct updateNode* );
 int checkDir(char *);
 void writeFile(char* , char* );
+int findHighestVersion(struct updateNode* );
+void writeNewManifest(struct manifestNode*, char*, struct updateNode*);
 
 int main (int args, char** argv) {
 	char client [100] = "client/";
@@ -457,6 +459,7 @@ void compareManifests(char* manifestString, char* projName) {
 			addManifestList(&clientManifest, path, version, hash);
 		}
 	}
+	printf("serverVersion: %s\n", serverVersion);
 	if (strcmp(serverVersion, clientVersion) == 0) {
 		checkUpLoad(serverManifest, clientManifest);
 	} else {
@@ -668,16 +671,16 @@ char* getUpgradeList(char* projName) {
 	while (token != NULL) {
 		token = strtok(NULL, " \n");
 		tag = token;
-		printf("tag: %s\n", tag);
+		//printf("tag: %s\n", tag);
 		token = strtok(NULL, " \n");
 		path = token;
-		printf("path: %s\n", path);
+	//	printf("path: %s\n", path);
 		token = strtok(NULL, " \n");
 		hash = token;
-		printf("hash: %s\n", hash);
+		//printf("hash: %s\n", hash);
 		token = strtok(NULL, " \n");
 		version = token;
-		printf("version: %s\n", version);
+		//printf("version: %s\n", version);
 	
 		if (tag != NULL && hash != NULL && path != NULL && version != NULL) {
 			addUpgradeList(&upgradeList, tag, path, hash, version);
@@ -691,20 +694,24 @@ char* getUpgradeList(char* projName) {
 	manifestPath[strlen("client/") + strlen(projName) + strlen("/.Manifest")] = '\0';
 	printf("client manifest\n");
 	int manfd = open(manifestPath, O_RDONLY);
+	printf("manifestPAth: %s\n", manifestPath);
 	printf("manfd: %d\n", manfd);
 	char* otherManifest = readFile(manfd);
-	//printf("manifestfile string %s\n", otherManifest);
+	printf("manifestfile string %s\n", otherManifest);
 	char* token2 = strtok(otherManifest+1, " \n");
 	struct manifestNode * clientManifest = NULL;
 	while (token2 != NULL) {
 		token2 = strtok(NULL, " \n");
 		char* path = token2;
+		printf("path: %s\n", path);
 		token2 = strtok(NULL, " \n");
 		char* version = token2;
+		printf("version: %s\n", version);
 		token2 = strtok(NULL, " \n");
 		char* hash = token2;
-	
-		if (path != NULL) {
+		printf("version: %s\n", hash);
+		if (path != NULL && version != NULL && hash != NULL) {
+			printf("path: %s version: %s hash: %s\n", path, version, hash);
 			addManifestList(&clientManifest, path, version, hash);
 		}
 	}
@@ -717,6 +724,7 @@ char* getUpgradeList(char* projName) {
 		printf("path: %s version: %s hash: %s\n", manifestCur->path, manifestCur->version, manifestCur->hash);
 		manifestCur = manifestCur->next;
 	}
+	writeNewManifest(clientManifest, projName, upgradeList);
 	free(clientManifest);
 	free(upgradeList);
 	return message;
@@ -860,4 +868,45 @@ void writeFile(char* filename, char* contents) {
 		write(fd, contents, strlen(contents));
 	}
 	
+}
+
+void writeNewManifest(struct manifestNode* manList, char* projName, struct updateNode* updateList) {
+	char* projPath = malloc(strlen("client/") + strlen(projName) + strlen("./Manifest") + 1);
+	strcpy(projPath, "client/");
+	strcat(projPath, projName);
+	strcat(projPath, "/.Manifest");
+	projPath[strlen("client/") + strlen(projName) + strlen("./Manifest")] = '\0';
+	printf("projPath: %s\n", projPath);
+	int highestVersion = findHighestVersion(updateList);
+	char buffer[10];
+	sprintf(buffer, "%d", highestVersion);
+	printf("highestVersion: %s\n", buffer);
+	remove(projPath);
+	mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
+	int fd = open(projPath, O_RDWR | O_CREAT, mode);
+	write(fd, "$", strlen("$"));
+	write(fd, buffer, strlen(buffer));
+	write(fd, "\n", strlen("\n"));
+	struct manifestNode* ptr = manList;
+	while (ptr != NULL) {
+		write(fd, ptr->path, strlen(ptr->path));
+		write(fd, " ", strlen(" "));
+		write(fd, ptr->version, strlen(ptr->version));
+		write(fd, " ", strlen(" "));
+		write(fd, ptr->hash, strlen(ptr->hash));
+		ptr = ptr->next;
+	}
+	
+}
+int findHighestVersion(struct updateNode* manList) {
+	struct updateNode* ptr = manList;
+	int highestVersion = 0;
+	while (ptr != NULL) {
+		int currVersion = atoi(ptr->version);
+		if (currVersion > highestVersion) {
+			highestVersion = currVersion;
+		}
+		ptr = ptr->next;
+	}
+	return highestVersion;
 }

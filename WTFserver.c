@@ -397,6 +397,7 @@ int tokStringSendFiles(struct fileNode ** head, char* clientString) {
 			int fd = open(path, O_RDONLY);
 			if (fd < 0) {
 					printf("Error: %s does not exist\n", path);
+					return 0;
 				}
 			printf("fd: %d\n", fd);
 			char* contents = readFile(fd);
