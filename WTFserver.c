@@ -114,6 +114,10 @@ int main(int argc, char** argv) {
 			strcat(path, "/.Manifest");
 			printf("path: %s\n", path);
 			int fd = open(path , O_RDONLY);
+			if (fd < 0) {
+				printf("Error: %s does not exist\n", path);
+				return 0;
+			}
 			printf("file desc %d\n", fd);
 			char* string = readFile(fd);
 			struct fileNode * head = NULL;
@@ -329,6 +333,9 @@ int printDir (char* directoryName, struct fileNode ** head) {
 			printf("%s\n", filename);
 			if (strcmp(dir->d_name, ".") != 0 && strcmp(dir->d_name, "..") != 0) {
 				int fd = open(filename, O_RDONLY);
+				if (fd < 0) {
+					printf("Error: %s does not exist\n", filename);
+				}
 				char* contents = readFile(fd);
 				close(fd);
 				char* hashString = hash(contents);
@@ -356,6 +363,9 @@ int printDir_contents (char* directoryName, struct fileNode ** head) {
 			printf("%s\n", filename);
 			if (strcmp(dir->d_name, ".") != 0 && strcmp(dir->d_name, "..") != 0) {
 				int fd = open(filename, O_RDONLY);
+				if (fd < 0) {
+					printf("Error: %s does not exist\n", filename);
+				}
 				printf("PRINTDR FD: %d", fd);
 				char* contents = readFile(fd);
 				close(fd);
@@ -385,6 +395,10 @@ int tokStringSendFiles(struct fileNode ** head, char* clientString) {
 			path[LENGTH] = '\0';
 			printf("path: %s\n", path);
 			int fd = open(path, O_RDONLY);
+			if (fd < 0) {
+					printf("Error: %s does not exist\n", path);
+				}
+			printf("fd: %d\n", fd);
 			char* contents = readFile(fd);
 			int length = strlen(contents);
 			fileListLen = addToList(head, strlen(path), path, length, contents);

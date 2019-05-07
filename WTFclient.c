@@ -158,6 +158,10 @@ int main (int args, char** argv) {
 	if (strcmp(argv[1], "upgrade") == 0) {
 		printf("in upgrade\n");
 		char* requestMessage = getUpgradeList(argv[2]);
+		if (requestMessage == NULL) {
+			printf("Error: No .Update file present\n");
+			return 0;
+		}
 		printf("requestMessage %s\n", requestMessage);
 		send_to_server(network_socket, argv[1]);
 		send_to_server(network_socket, requestMessage);
@@ -178,10 +182,11 @@ int main (int args, char** argv) {
 		}
 		char* updatePath = malloc(strlen("client/") + strlen(argv[2]) + strlen("/.Update") + 1);
 		strcpy(updatePath, "client/");
-		strcpy(updatePath, argv[2]);
-		strcpy(updatePath, "/.Update");
+		strcat(updatePath, argv[2]);
+		strcat(updatePath, "/.Update");
 		updatePath[strlen("client/") + strlen(argv[2]) + strlen("/.Update")] = '\0';
 		printf("updatePath: %s\n", updatePath);
+		//remove(updatePath);
 	}
 	//clwriteFile("newProj/file4.txt", "this is from the c program");
 	close(network_socket);
@@ -634,10 +639,16 @@ int openUpdate(char* filename) {
 	return fd;
 }
 char* getUpgradeList(char* projName) {
-	char* updatePath = malloc(strlen(projName) + strlen("/.Update") + 1);
-	strcpy(updatePath, projName);
+	char* updatePath = malloc(strlen("client/") + strlen(projName) + strlen("/.Update") + 1);
+	strcpy(updatePath, "client/");
+	strcat(updatePath, projName);
 	strcat(updatePath, "/.Update");
-	int fd = getClientFilePath(updatePath);
+	printf("updatePAth: %s\n", updatePath);
+	if (access(updatePath, F_OK) == -1) {
+		//printf("Error: There is no .Update file present\n");
+		return NULL;
+	}
+	int fd = open(updatePath, O_RDONLY);
 	char* contents = readFile(fd);
 	//printf("update contents %s\n", contents);
 	char* token = strtok(contents, " \n");
