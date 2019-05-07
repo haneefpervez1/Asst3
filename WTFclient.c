@@ -13,7 +13,7 @@
 #include <arpa/inet.h>
 #include <ctype.h>
 #include <netdb.h>
-
+#define PORT "9002"
 struct manifestNode{
 	char * path;
 	char* version;
@@ -58,7 +58,15 @@ void overWriteMan (struct manifestNode** , char* , char* , char* ) ;
 char* requestFiles(struct updateNode* );
 int checkDir(char *);
 void writeFile(char* , char* );
-
+void *get_in_addr(struct sockaddr *);
+void *get_in_addr(struct sockaddr*sa)
+{
+ 	if(sa->sa_family == AF_INET)
+ 	{
+ 	 return & (((struct sockaddr_in*)sa)->sin_addr);
+ 	}
+ 	return &(((struct sockaddr_in6*)sa)->sin6_addr);
+}
 int main (int args, char** argv) {
 	char client [100] = "client/";
 	//char * command;
@@ -68,7 +76,56 @@ int main (int args, char** argv) {
 		printf("configure %d\n", configure(argv[2], argv[3]));
 	}
 // ----------------------------------------------------------------------------------> SOCKET CREATION
-	int network_socket;
+    int network_socket;  
+    struct addrinfo hints, *servinfo, *p;
+    int rv;
+    char s[INET6_ADDRSTRLEN];
+    char* configureString = readConfigure();
+	char* token = strtok(configureString, " ");
+	char* hostName = token;
+	printf("HostName: %s\n", hostName);
+	token = strtok(NULL, " ");
+	printf("Port: %s\n", PORT);
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_flags=AI_PASSIVE;
+    //hints.ai_flags = hostName;
+    if ((rv = getaddrinfo(hostName, PORT, &hints, &servinfo)) != 0) {
+        fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
+        return 1;
+    }
+
+    // loop through all the results and connect to the first we can
+    for(p = servinfo; p != NULL; p = p->ai_next) {
+        if ((network_socket = socket(p->ai_family, p->ai_socktype,
+                p->ai_protocol)) == -1) {
+            perror("client: socket");
+            continue;
+        }
+
+        if (connect(network_socket, p->ai_addr, p->ai_addrlen) == -1) {
+            close(network_socket);
+            perror("client: connect");
+            continue;
+        }
+
+        break;
+    }
+
+    if (p == NULL) {
+        fprintf(stderr, "client: failed to connect\n");
+        return 2;
+    }
+
+    inet_ntop(p->ai_family, get_in_addr((struct sockaddr *)p->ai_addr),
+            s, sizeof s);
+    printf("client: connecting to %s\n", s);
+
+    freeaddrinfo(servinfo); // all done with this structure
+    
+    printf("client: received");
+	/*int network_socket;
 	network_socket = socket(AF_INET, SOCK_STREAM, 0);
 	//int port = getPortNum();
 	char* configureString = readConfigure();
@@ -78,12 +135,22 @@ int main (int args, char** argv) {
 	token = strtok(NULL, " ");
 	char* portString = token;
 	int port = atoi(portString);
-	port = port/10;
-	printf("hostname: %s port: %d\n", hostName, port);
+	//port = port/10;
 	struct sockaddr_in server_address;
+	struct hostent *hostinfo;
 	server_address.sin_family = AF_INET;
 	server_address.sin_port = htons(port);
-	server_address.sin_addr.s_addr = inet_addr(gethostbyname(hostName));
+	hostinfo = gethostbyname(hostName);
+	printf("hostname: %s hostinfo %s port: %d\n", hostName, hostinfo->h_addr,port);
+	if(hostinfo == NULL)
+	{
+	 printf("Unknown Host\n");
+	}
+	else
+	{
+	 server_address.sin_addr = * (struct in_addr *) hostinfo->h_addr;
+	}
+	//server_address.sin_addr.s_addr = gethostbyname(hostName);
 	
 	int connection_status = connect(network_socket, (struct sockaddr *) &server_address, sizeof(server_address));
 	if (connection_status != 0) {
@@ -91,7 +158,7 @@ int main (int args, char** argv) {
 	}
 	char server_response[256];
 	read(network_socket, &server_response, sizeof(server_response));
-	printf("The server sent the data: %s\n", server_response);
+	printf("The server sent the data: %s\n", server_response);*/
 // ------------------------------------------------------------------------------------------------------------------> SOCKET CREATION
 	if (strcmp(argv[1], "checkout") == 0){
 		//command = argv[1];
@@ -99,10 +166,7 @@ int main (int args, char** argv) {
 		char path[7+strlen(argv[2])];
 		strcpy(path, "client/");
 	  	strcat(path,argv[2]);
-		if (checkDir(path)==0) {
- 
-		}
-		else
+		if (checkDir(path)!=0) 
 		{
 		send_to_server(network_socket, argv[1]);
 		send_to_server(network_socket, argv[2]);
@@ -111,7 +175,7 @@ int main (int args, char** argv) {
 		mkdir(path, 0700);
 		printf("contents of manifest: %s\n", string);
 		read_string(string);
-		//printf("%s", argv[1]);
+		//printf("%s", argv[1]
 		}
 	}
 	
@@ -167,7 +231,7 @@ int main (int args, char** argv) {
 			}
 		}
 	}
-	close(network_socket);
+	
 	return 0;
 }
 int checkDir(char * path)

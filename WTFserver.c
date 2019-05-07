@@ -2,6 +2,10 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <netdb.h>
+#include <arpa/inet.h>
+#include <sys/wait.h>
+#include <signal.h>
 #include <string.h>
 #include <dirent.h>
 #include <unistd.h>
@@ -11,6 +15,7 @@
 #include <openssl/sha.h>
 #include <ctype.h>
 
+#define PORT "9002"
 struct fileNode {
 	int nameLength;
 	char* name;
@@ -29,16 +34,87 @@ int addToList(struct fileNode**, int, char*, int, char*);
 int printDir(char*, struct fileNode**);
 int printDir_contents (char* directoryName, struct fileNode ** head);
 int tokStringSendFiles(struct fileNode ** , char* );
+int checkDir(char *);
+void *get_in_addr(struct sockaddr *);
+// get sockaddr, IPv4 or IPv6:
+void *get_in_addr(struct sockaddr *sa)
+{
+	if (sa->sa_family == AF_INET) 
+	{
+        return &(((struct sockaddr_in*)sa)->sin_addr);
+    	}
+        return &(((struct sockaddr_in6*)sa)->sin6_addr);
+}
+
 int main(int argc, char** argv) {
-	char server_message[256] = "You have reached the server";
-	// -------------------------------------------------------> SOCKET CREATION
-		int portNum = atoi(argv[1]);
+// -------------------------------------------------------> SOCKET CREATION
+// ------------------------------------------------------->
+// ------------------------------------------------------->
+	int sockfd, client_socket;
+	struct addrinfo a, *b, *p;
+	struct sockaddr_storage client;
+	socklen_t size;
+	int opt=1;
+	int rv;
+	char s[20];
+		
+    memset(&a, 0, sizeof(a));
+    a.ai_family = AF_UNSPEC;
+    a.ai_socktype = SOCK_STREAM;
+    a.ai_flags = AI_PASSIVE; // use my IP
+
+    if ((rv = getaddrinfo(NULL, PORT, &a, &b)) != 0) {
+        printf("getadd Error");
+        return 1;
+    }
+    // loop through all the results and bind to the first we can
+    for(p = b; p != NULL; p = p->ai_next) {
+        if ((sockfd = socket(p->ai_family, p->ai_socktype,
+                p->ai_protocol)) == -1) {
+            printf("server: socket");
+            continue;
+        }
+        if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &opt,
+                sizeof(int)) == -1) {
+            printf("setsockopt");
+            exit(1);
+        }
+        if (bind(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
+            close(sockfd);
+            printf("server: bind");
+            continue;
+        }
+        break;
+    }
+    	freeaddrinfo(b);
+    	if (p == NULL)  {
+        fprintf(stderr, "server: failed to bind\n");
+        exit(1);
+   	}
+    if (listen(sockfd, 5) == -1) {
+        perror("listen");
+        exit(1);
+    }
+     printf("server: waiting for connections...\n");
+     
+     while(1) {  // main accept() loop
+        size = sizeof(client);
+        client_socket = accept(sockfd,(struct sockaddr *)&client, &size);
+        if (client_socket == -1) {
+            perror("accept");
+            continue;
+        }
+ inet_ntop(client.ss_family,get_in_addr((struct sockaddr *)&client), s, sizeof(s));
+        printf("server: got connection from %s\n", s);
+		/*int portNum = atoi(argv[1]);
 		int server_socket;
 		server_socket = socket(AF_INET, SOCK_STREAM, 0);
 		struct sockaddr_in server_address;
+		int addrlen = sizeof(server_address);
+		memset(&server_address, '\0', sizeof(server_address));
 		server_address.sin_family = AF_INET;
 		server_address.sin_port = htons(portNum);
-		server_address.sin_addr.s_addr = INADDR_ANY;
+		server_address.  .s_addr = htonl(INADDR_ANY);
 		int opt = 1;
 		if (setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
 			perror("setsocketopt");
@@ -53,15 +129,19 @@ int main(int argc, char** argv) {
 			exit(1);
 		}
 		int client_socket;
-		client_socket = accept(server_socket, NULL, NULL);
+		//int clen = sizeof(caddr);
+		client_socket = accept(server_socket, (struct sockaddr*) &server_address, (socklen_t*)&addrlen);
 		if (client_socket > 0) {
 			printf("connection acceptance test success\n");
 		} else {
 			printf("connection acceptance failure\n");
 		}
-		write(client_socket, server_message, sizeof(server_message));
-	// ------------------------------------------------------------------------>
+		write(client_socket, server_message, sizeof(server_message));*/
+// ------------------------------------------------------------------------->
+// ------------------------------------------------------------------------->
+// ------------------------------------------------------------------------>
 		char * buffer = READ(client_socket);
+		printf("%s\n", buffer);
 		if(strncmp("checkout",buffer, 8)==0)
 		{
 			char * project = READ(client_socket);
@@ -70,6 +150,11 @@ int main(int argc, char** argv) {
 			strcat(path, "/");
 			strcat(path, project);
 			printf("%s\n", path);
+			/*if(checkDir(path)==0)
+			{
+			 printf("No such Project exists\n");
+			 return 0;
+			}*/
 			DIR * dr = opendir(path);
 			if (dr == NULL) {
 			printf("error\n");
@@ -133,8 +218,10 @@ int main(int argc, char** argv) {
 			send_to_client(client_socket, messageToClient);
 		}
 		//hash("systems");
+		break;
+	}
 	close(client_socket);
-	close(server_socket);
+	close(sockfd);
 	return 0;
 }
 char * READ(int client_socket){
@@ -149,9 +236,9 @@ char * READ(int client_socket){
 	read(client_socket, buffer, length+1);
 	buffer[length] = '\0';*/
 	char length[4];
-	read(client_socket, length, 4);
+	int x = read(client_socket, length, 4);
 	int num = atoi(length);
-	//printf("%s\n", length);
+	printf("Actually Read: %d\n", x);
 	printf("Length Received: %d\n", num);
 	//char *buffer = malloc(sizeof(chcar) * num);
 	//char buffer[num];
@@ -392,4 +479,14 @@ int tokStringSendFiles(struct fileNode ** head, char* clientString) {
 		}
 	}
 	return fileListLen;
+}
+int checkDir(char * path)
+{
+ 	struct stat st = {0};
+	if (stat(path, &st) != -1)
+	{
+    	printf("Error:Project name already exists\n");
+    	return 0;
+	}
+  return 1;
 }
