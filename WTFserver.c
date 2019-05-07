@@ -141,7 +141,9 @@ int main(int argc, char** argv) {
 // ------------------------------------------------------------------------->
 // ------------------------------------------------------------------------>
 		char * buffer = READ(client_socket);
-		printf("%s\n", buffer);
+		if (strncmp("create", buffer, 6) == 0 ) {
+			create_server(client_socket);
+		}
 		if(strncmp("checkout",buffer, 8)==0)
 		{
 			char * project = READ(client_socket);
@@ -196,6 +198,10 @@ int main(int argc, char** argv) {
 			strcat(path, "/.Manifest");
 			printf("path: %s\n", path);
 			int fd = open(path , O_RDONLY);
+			if (fd < 0) {
+				printf("Error: %s does not exist\n", path);
+				return 0;
+			}
 			printf("file desc %d\n", fd);
 			char* string = readFile(fd);
 			struct fileNode * head = NULL;
@@ -289,8 +295,8 @@ char* readFile (int fd) {
 }
 void create_server(int client_socket)
 {
-		char project[256];
-		read(client_socket, project, sizeof(project));
+		char* project = READ(client_socket);
+		printf("this is the project %s\n", project);
 		struct stat st = {0};
 		if(stat(project, &st) ==-1)
 		{
@@ -304,12 +310,13 @@ void create_server(int client_socket)
 		 printf("%s\n", project);
 		 //printf("%s", directory);
 		 mkdir(directory, 0700);
+		 printf("%s\n", directory);
 		 char manifest[1000];
 		 strcpy(manifest, directory);
 		 strcat(manifest, "/");
 		 char * path = strcat(manifest, ".Manifest");
 		 open(path, O_RDWR | O_CREAT, mode);
-		 write(client_socket, "created", sizeof("created"));
+		 send_to_client(client_socket, "created");
 		}
 		else
 		{
@@ -371,22 +378,17 @@ void send_to_client(int network_socket, char * string)
  write(network_socket, string, (strlen(string)+1));
 }
 int addToList(struct fileNode ** head, int nameLength, char* name, int contentLength, char* contents) {
+	printf("in add to list\n");
 	int counter = 1;
-	printf("good\n");
 	struct fileNode* temp = (struct fileNode*)malloc(sizeof(struct fileNode));
-	printf("good2\n");
 	temp->nameLength = nameLength;
 	temp->name = malloc(nameLength+1);
-	printf("namelength good\n");
 	strcpy(temp->name, name+7);
 	temp->name[nameLength] = '\0';
-	printf("name good\n");
 	temp->contentLength = contentLength;
 	temp->contents = malloc(contentLength+1);
-	printf("con lent good\n");
 	strcpy(temp->contents, contents);
 	temp->contents[contentLength] = '\0';
-	printf("con good\n");
 	//printf("a structnode containing %d %s %d %s will be added\n", temp->nameLength, temp->name, temp->contentLength, temp->contents); 
 	if (*head == NULL) {
 		*head = temp;
@@ -417,6 +419,9 @@ int printDir (char* directoryName, struct fileNode ** head) {
 			printf("%s\n", filename);
 			if (strcmp(dir->d_name, ".") != 0 && strcmp(dir->d_name, "..") != 0) {
 				int fd = open(filename, O_RDONLY);
+				if (fd < 0) {
+					printf("Error: %s does not exist\n", filename);
+				}
 				char* contents = readFile(fd);
 				close(fd);
 				char* hashString = hash(contents);
@@ -444,6 +449,9 @@ int printDir_contents (char* directoryName, struct fileNode ** head) {
 			printf("%s\n", filename);
 			if (strcmp(dir->d_name, ".") != 0 && strcmp(dir->d_name, "..") != 0) {
 				int fd = open(filename, O_RDONLY);
+				if (fd < 0) {
+					printf("Error: %s does not exist\n", filename);
+				}
 				printf("PRINTDR FD: %d", fd);
 				char* contents = readFile(fd);
 				close(fd);
@@ -473,6 +481,11 @@ int tokStringSendFiles(struct fileNode ** head, char* clientString) {
 			path[LENGTH] = '\0';
 			printf("path: %s\n", path);
 			int fd = open(path, O_RDONLY);
+			if (fd < 0) {
+					printf("Error: %s does not exist\n", path);
+					return 0;
+				}
+			printf("fd: %d\n", fd);
 			char* contents = readFile(fd);
 			int length = strlen(contents);
 			fileListLen = addToList(head, strlen(path), path, length, contents);
