@@ -12,6 +12,7 @@
 #include <openssl/sha.h>
 #include <arpa/inet.h>
 #include <ctype.h>
+#include <netdb.h>
 
 struct manifestNode{
 	char * path;
@@ -28,8 +29,10 @@ struct updateNode {
 	struct updateNode* next;
 };
 
+struct addrinfo hints, *infoptr;
+
 int configure(char*, char*);
-int getPortNum();
+char* readConfigure();
 void addFile(char*, char*);
 void read_string(char *);
 //int is_digit(char *);
@@ -67,11 +70,20 @@ int main (int args, char** argv) {
 // ----------------------------------------------------------------------------------> SOCKET CREATION
 	int network_socket;
 	network_socket = socket(AF_INET, SOCK_STREAM, 0);
-	int port = getPortNum();
+	//int port = getPortNum();
+	char* configureString = readConfigure();
+	//printf("configure String %s\n", configureString);
+	char* token = strtok(configureString, " ");
+	char* hostName = token;
+	token = strtok(NULL, " ");
+	char* portString = token;
+	int port = atoi(portString);
+	port = port/10;
+	printf("hostname: %s port: %d\n", hostName, port);
 	struct sockaddr_in server_address;
 	server_address.sin_family = AF_INET;
 	server_address.sin_port = htons(port);
-	server_address.sin_addr.s_addr = INADDR_ANY;
+	server_address.sin_addr.s_addr = inet_addr(gethostbyname(hostName));
 	
 	int connection_status = connect(network_socket, (struct sockaddr *) &server_address, sizeof(server_address));
 	if (connection_status != 0) {
@@ -187,36 +199,20 @@ int configure(char* hostname, char* port) {
 	printf("hostname: %s port: %s \n", hostname, port);
 	mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
  	int configure_file = creat(".configure", mode);
-	write(configure_file, port, strlen(port));
-	write(configure_file, " ", strlen(" "));
 	write(configure_file, hostname, strlen(hostname));
+	write(configure_file, " ", strlen(" "));
+	write(configure_file, port, strlen(port));
 	return -1;
 }
-int getPortNum() {
+char* readConfigure() {
 	if (access(".configure", F_OK) != -1) {
 		int fd = open(".configure", O_RDONLY);
-		int i=1;
-		char buff[1];
-		int x = read(fd, buff, 1);
-		char string[10000];
-		string[0]=buff[0]; 
-		 	while(x != 0)
-		 	{
-		 	x = read(fd, buff, 1);
-				if (buff[0] == ' ') {
-					break;
-				}
-			 	 if(buff[0]!='\n')
-			 	 {
-			 	 	string[i]=buff[0];
-			 	 } 
-		 	 i++;
-		 	}
-		int port = atoi(string);
+		char* string = readFile(fd);
+		//printf("configure string: %s\n", string);
 		//printf("port %d\n", port);
-		return port;
+		return string;
 	}
-	return -1;
+	return NULL;
 }
 
 char* readFile (int fd) {
