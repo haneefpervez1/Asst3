@@ -288,22 +288,17 @@ void send_to_client(int network_socket, char * string)
  write(network_socket, string, (strlen(string)+1));
 }
 int addToList(struct fileNode ** head, int nameLength, char* name, int contentLength, char* contents) {
+	printf("in add to list\n");
 	int counter = 1;
-	printf("good\n");
 	struct fileNode* temp = (struct fileNode*)malloc(sizeof(struct fileNode));
-	printf("good2\n");
 	temp->nameLength = nameLength;
 	temp->name = malloc(nameLength+1);
-	printf("namelength good\n");
 	strcpy(temp->name, name+7);
 	temp->name[nameLength] = '\0';
-	printf("name good\n");
 	temp->contentLength = contentLength;
 	temp->contents = malloc(contentLength+1);
-	printf("con lent good\n");
 	strcpy(temp->contents, contents);
 	temp->contents[contentLength] = '\0';
-	printf("con good\n");
 	//printf("a structnode containing %d %s %d %s will be added\n", temp->nameLength, temp->name, temp->contentLength, temp->contents); 
 	if (*head == NULL) {
 		*head = temp;

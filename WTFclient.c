@@ -148,6 +148,7 @@ int main (int args, char** argv) {
 		addFile(argv[2], argv[3]);
 	}
 	if (strcmp(argv[1], "update") == 0) {
+		printf("in update\n");
 		send_to_server(network_socket, argv[1]);
 		send_to_server(network_socket, argv[2]);
 		char* string = READ(network_socket);
@@ -155,6 +156,7 @@ int main (int args, char** argv) {
 		compareManifests(string, argv[2]);
 	}
 	if (strcmp(argv[1], "upgrade") == 0) {
+		printf("in upgrade\n");
 		char* requestMessage = getUpgradeList(argv[2]);
 		printf("requestMessage %s\n", requestMessage);
 		send_to_server(network_socket, argv[1]);
@@ -421,7 +423,7 @@ void compareManifests(char* manifestString, char* projName) {
 		token = strtok(NULL, " \n");
 		char* hash = token;
 	
-		if (path != NULL) {
+		if (path != NULL && version != NULL && hash != NULL) {
 			addManifestList(&serverManifest, path, version, hash);
 		}
 	}
@@ -446,7 +448,7 @@ void compareManifests(char* manifestString, char* projName) {
 		token2 = strtok(NULL, " \n");
 		char* hash = token2;
 	
-		if (path != NULL) {
+		if (path != NULL && version != NULL && hash != NULL) {
 			addManifestList(&clientManifest, path, version, hash);
 		}
 	}
@@ -666,7 +668,7 @@ char* getUpgradeList(char* projName) {
 		version = token;
 		printf("version: %s\n", version);
 	
-		if (tag != NULL) {
+		if (tag != NULL && hash != NULL && path != NULL && version != NULL) {
 			addUpgradeList(&upgradeList, tag, path, hash, version);
 		}
 	
