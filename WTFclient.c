@@ -824,7 +824,10 @@ void writeFile(char* filename, char* contents) {
 	strcpy(path, "client/");
 	strcat(path, filename);
 	if (access(path, F_OK) != -1) {
-		printf("file %s does exist\n", path);
+		remove(path);
+		mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
+		int fd = open(path,O_RDWR | O_CREAT, mode);
+		write(fd, contents, strlen(contents));
 	} else {
 		printf("%s does not exist\n", path);
 		mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;

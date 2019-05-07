@@ -29,7 +29,6 @@ int addToList(struct fileNode**, int, char*, int, char*);
 int printDir(char*, struct fileNode**);
 int printDir_contents (char* directoryName, struct fileNode ** head);
 int tokStringSendFiles(struct fileNode ** , char* );
-
 int main(int argc, char** argv) {
 	char server_message[256] = "You have reached the server";
 	// -------------------------------------------------------> SOCKET CREATION
