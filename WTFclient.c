@@ -73,10 +73,7 @@ void *get_in_addr(struct sockaddr*sa)
 
 int main (int args, char** argv) {
 	char client [100] = "client/";
-	//char * command;
 	if (strcmp(argv[1], "configure") == 0) {
-		//char configureMessage[20] = "configure:2:tst.txt";
-		//write(network_socket, &configureMessage, sizeof(configureMessage));
 		printf("configure %d\n", configure(argv[2], argv[3]));
 	}
 	if (strcmp(argv[1], "add") == 0) {
@@ -102,13 +99,11 @@ int main (int args, char** argv) {
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_flags=AI_PASSIVE;
-    //hints.ai_flags = hostName;
     if ((rv = getaddrinfo(hostName, port, &hints, &servinfo)) != 0) {
         fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
         return 1;
     }
 
-    // loop through all the results and connect to the first we can
     for(p = servinfo; p != NULL; p = p->ai_next) {
         if ((network_socket = socket(p->ai_family, p->ai_socktype,
                 p->ai_protocol)) == -1) {
@@ -137,46 +132,9 @@ int main (int args, char** argv) {
     freeaddrinfo(servinfo); // all done with this structure
     
     printf("client: received");
-	/*int network_socket;
-	network_socket = socket(AF_INET, SOCK_STREAM, 0);
-	//int port = getPortNum();
-	char* configureString = readConfigure();
-	//printf("configure String %s\n", configureString);
-	char* token = strtok(configureString, " ");
-	char* hostName = token;
-	token = strtok(NULL, " ");
-	char* portString = token;
-	int port = atoi(portString);
-	//port = port/10;
-	struct sockaddr_in server_address;
-	struct hostent *hostinfo;
-	server_address.sin_family = AF_INET;
-	server_address.sin_port = htons(port);
-<<<<<<< HEAD
-	hostinfo = gethostbyname(hostName);
-	printf("hostname: %s hostinfo %s port: %d\n", hostName, hostinfo->h_addr,port);
-	if(hostinfo == NULL)
-	{
-	 printf("Unknown Host\n");
-	}
-	else
-	{
-	 server_address.sin_addr = * (struct in_addr *) hostinfo->h_addr;
-	}
-	//server_address.sin_addr.s_addr = gethostbyname(hostName);
-=======
-	server_address.sin_addr.s_addr = INADDR_ANY;
->>>>>>> 00a38e1959135b77cd97d895630528a99ef7fc77
 	
-	int connection_status = connect(network_socket, (struct sockaddr *) &server_address, sizeof(server_address));
-	if (connection_status != 0) {
-		printf("Error with connection\n");
-	}
-	char server_response[256];
-	read(network_socket, &server_response, sizeof(server_response));
-	printf("The server sent the data: %s\n", server_response);*/
 // ------------------------------------------------------------------------------------------------------------------> SOCKET CREATION
-	if (strcmp(argv[1], "checkout") == 0){
+	if (strcmp(argv[1], "checkout") == 0){				// If command is checkout
 		//command = argv[1];
 		//strcat(command, argv[2]);
 		char path[7+strlen(argv[2])];
@@ -184,38 +142,28 @@ int main (int args, char** argv) {
 	  	strcat(path,argv[2]);
 		if (checkDir(path)!=0) 
 		{
-		send_to_server(network_socket, argv[1]);
+		send_to_server(network_socket, argv[1]);		// writes to server socket
 		send_to_server(network_socket, argv[2]);
-		char* string = READ(network_socket);
-	  	printf("%s\n", path);
+		char* string = READ(network_socket);			// reads from socket
 		mkdir(path, 0700);
-		printf("contents of manifest: %s\n", string);
 		read_string(string);
 		//printf("%s", argv[1]
 		}
 	}
 	
-	if (strcmp(argv[1], "create")==0)
+	if (strcmp(argv[1], "create")==0)					// if command is create
 	{
-	
-	// printf("in create\n");
-	// char * createmsg = malloc(sizeof(argv[2])+1);
+
 	 char direct[100];
-	 //cchar choice [100];
 	 char path [100];
-	// strcpy(createmsg, argv[2]);
-	// printf("%s", createmsg);
-	// write(network_socket, createmsg, sizeof(createmsg));
 	 send_to_server(network_socket, argv[1]);
 	 send_to_server(network_socket, argv[2]);
 	 char* response = READ(network_socket);
-	 printf("response: %s\n", response);
-	// read(network_socket, choice, sizeof(choice));
 	
 	 if(strcmp(response, "created") == 0 )
 	 {
 	  strcpy(direct, client);
-	  strcat(direct, argv[2]);
+	  strcat(direct, argv[2]);						// creating new project and making emptry manifest
 	  mkdir(direct, 0700);
 	  strcpy(path, direct);
 	  strcat(path, "/.Manifest");
@@ -224,26 +172,23 @@ int main (int args, char** argv) {
 	 }
 	
 	}
-	if (strcmp(argv[1], "update") == 0) {
-		printf("in update\n");
+	if (strcmp(argv[1], "update") == 0) {			// if command is update
 		send_to_server(network_socket, argv[1]);
 		send_to_server(network_socket, argv[2]);
 		char* string = READ(network_socket);
-		//printf("contents of manifest: %s\n", string);
 		compareManifests(string, argv[2]);
 	}
-	if (strcmp(argv[1], "upgrade") == 0) {
-		printf("in upgrade\n");
+	if (strcmp(argv[1], "upgrade") == 0) {			// if command is upgrade
 		char* requestMessage = getUpgradeList(argv[2]);
 		if (requestMessage == NULL) {
 			printf("Error: No .Update file present\n");
 			return 0;
 		}
-		printf("requestMessage %s\n", requestMessage);
+		printf("requestMessage %s\n", requestMessage);	// getting files that need to be added or modified
 		send_to_server(network_socket, argv[1]);
 		send_to_server(network_socket, requestMessage);
 		char* newFiles = READ(network_socket);
-		printf("newFiles: %s", newFiles);
+		printf("From server: %s", newFiles);
 		char *token = strtok(newFiles, ":");
 		token = strtok(NULL, ":");
 		while (token != NULL) {
@@ -254,7 +199,7 @@ int main (int args, char** argv) {
 			token = strtok(NULL, ":");
 			char* contents = token;
 			if (filename != NULL && contents != NULL) {
-				writeFile(filename, contents);
+				writeFile(filename, contents);			// writing new files
 			}
 		}
 		char* updatePath = malloc(strlen("client/") + strlen(argv[2]) + strlen("/.Update") + 1);
@@ -262,18 +207,16 @@ int main (int args, char** argv) {
 		strcat(updatePath, argv[2]);
 		strcat(updatePath, "/.Update");
 		updatePath[strlen("client/") + strlen(argv[2]) + strlen("/.Update")] = '\0';
-		printf("updatePath: %s\n", updatePath);
-		//remove(updatePath);
+		remove(updatePath);								// removing .Update
 	}
-	if (strcmp(argv[1], "destroy") == 0) {
+	if (strcmp(argv[1], "destroy") == 0) {				// if command is update
 		send_to_server(network_socket, argv[1]);
 		send_to_server(network_socket, argv[2]);
 	}
-	//clwriteFile("newProj/file4.txt", "this is from the c program");
 	close(network_socket);
 	return 0;
 }
-int checkDir(char * path)
+int checkDir(char * path)			// checks if project has already been created
 {
  	struct stat st = {0};
 	if (stat(path, &st) != -1)
@@ -283,6 +226,9 @@ int checkDir(char * path)
 	}
   return 1;
 }
+/*
+	sends message to server
+*/
 void send_to_server(int network_socket, char * string)
 {
  int len = strlen(string);
@@ -294,6 +240,9 @@ void send_to_server(int network_socket, char * string)
  write(network_socket, c, 4);
  write(network_socket, string, (strlen(string)+1));
 }
+/*
+	configures file
+*/
 int configure(char* hostname, char* port) {
 	if (access(".configure", F_OK) != -1) {
 		remove(".configure");
@@ -307,17 +256,20 @@ int configure(char* hostname, char* port) {
 	write(configure_file, port, strlen(port));
 	return -1;
 }
+/*
+	reads configure file
+*/
 char* readConfigure() {
 	if (access(".configure", F_OK) != -1) {
 		int fd = open(".configure", O_RDONLY);
 		char* string = readFile(fd);
-		//printf("configure string: %s\n", string);
-		//printf("port %d\n", port);
 		return string;
 	}
 	return NULL;
 }
-
+/*
+	reads file and returns contents as a string
+*/
 char* readFile (int fd) {
 	int i=1;
 	char buff[1];
@@ -351,19 +303,9 @@ char* readLine(int fd) {
 	string[i-1] = '\0';
 	return string; 
 }
-/*int is_digit(char * string)
-{
- int i;
- for(i=0;i<=strlen(string);i++)
- {
-  if(isdigit(string[i])==0)
-  {
-  	return 0;
-  }
- }
- return 1;
-}*/
-
+/*
+	read string from server and creates files from it
+*/
 void read_string(char * string)
 {
 	printf("Reading.\n");
@@ -383,41 +325,42 @@ void read_string(char * string)
 		 strcpy(filename, "client/");
 		 strcat(filename, token);
 	 	 int fd = open(filename,O_RDWR | O_CREAT, mode);
-		 printf("this is the fd %d\n", fd); 
-	 	 printf("File %s Created:\n", filename);
+	 	 printf("File %s Created\n", filename);
 	 	 token = strtok(NULL, ":");	// Bytes to write
 	 	 int bytes = atoi(token);
 	 	 token = strtok(NULL, ":");	// What to Write
 	 	 write(fd, token, bytes);
-	 	 printf("Content %s written:\n", token);
+	 	 printf("Content %s written\n", token);
 	 	 close(fd);
 	 	 fileNum--;
 		}
  	}
 }
-void addFile (char* projName, char* filename) {				// still need to deal with if project doesnt exist and if file is already in manifest
+/*
+ adds files to manifestt
+*/
+void addFile (char* projName, char* filename) {				
 	
 	int length = strlen(projName) + strlen(filename) + strlen("client/");
-	printf("length %d\n", length);
 	char* path = malloc(length+2);
 	strcpy(path, "client/");
 	strcat(path, projName);
 	strcat(path, "/");
 	strcat(path, filename);
 	int fd = open(path, O_RDONLY);
+	if (fd < 0) {
+		printf("Error: %s does not exist\n", projName);
+		return;
+	}
 	char* string = readFile(fd);
-	printf("string: %s\n", string);
 	char* hashString = hash(string);
-	printf("new file: %s fd: %d\nThese are the contents: %s\n", path, fd, hashString);
 
 	char* manifestPath = malloc(strlen(projName) + 14 +strlen("client/"));
 	strcpy(manifestPath, "client/");
 	strcat(manifestPath, projName);
 	strcat(manifestPath, "/.Manifest");
-	printf("manifest file %s\n", manifestPath);
 	
 	int fileD = open(manifestPath, O_RDWR);
-	printf("fileD %d\n", fileD);
 	
 	char buff[1];
 	int x = read(fileD, buff, 1);
@@ -434,7 +377,6 @@ void addFile (char* projName, char* filename) {				// still need to deal with if
 	strcpy(manifestLine, path+7);
 	strcat(manifestLine, " ");
 	strcat(manifestLine, firstLine);
-	printf("first line: %s\n", firstLine);
 	strcat(manifestLine, " ");
 	strcat(manifestLine, hashString);
 	printf("full line:\n%s", manifestLine);
@@ -444,8 +386,6 @@ void addFile (char* projName, char* filename) {				// still need to deal with if
 	}
 	write(fileD, manifestLine, strlen(manifestLine));
 	write(fileD, "\n", strlen("\n"));
-	//printf("file desc %d\n", fd);
-	//printf("%s will be added to %s\n", filename, projName);
 }
 /*
 	Generates hash and stores it in string
@@ -466,16 +406,6 @@ char* hash (char * contents) {
 	return string;
 }
 char * READ(int client_socket){
-	//char length[4];
-	/*int length = 0;
-	read(client_socket, &length, sizeof(length));
-	//int num = atoi(length);
-	//length = length -47;
-	printf("Length Received: %d\n", length);
-	//printf("%s\n", length);
-	char *buffer = malloc(length+1);
-	read(client_socket, buffer, length+1);
-	buffer[length] = '\0';*/
 	char length[4];
 	read(client_socket, length, 4);
 	int num = atoi(length);
@@ -492,13 +422,11 @@ char * READ(int client_socket){
 	compares server and client manifests
 */
 void compareManifests(char* manifestString, char* projName) {
-	//printf("The manifest from %s will be compared with\n%s", projName, manifestString);
 	char* token = strtok(manifestString+1, " \n");
 	int i = 0;
 	while (token[i] != '$' ) {
 		i++;
 	}
-	printf("version: %s\n", token+i+1);
 	char* serverVersion = token+i+1;
 	struct manifestNode * serverManifest = NULL;
 	while (token != NULL) {
@@ -518,12 +446,9 @@ void compareManifests(char* manifestString, char* projName) {
 	strcat(path, projName);
 	strcat(path, "/.Manifest");
 	path[strlen("client/") + strlen(projName) + strlen("/.Manifest")] = '\0';
-	printf("client manifest\n");
 	int fd = open(path, O_RDONLY);
 	char* otherManifest = readFile(fd);
-	//printf("manifestfile string %s\n", otherManifest);
 	char* token2 = strtok(otherManifest+1, " \n");
-	printf("version: %s\n", token2);
 	char* clientVersion = token2;
 	struct manifestNode * clientManifest = NULL;
 	while (token2 != NULL) {
@@ -538,7 +463,7 @@ void compareManifests(char* manifestString, char* projName) {
 			addManifestList(&clientManifest, path, version, hash);
 		}
 	}
-	printf("serverVersion: %s\n", serverVersion);
+
 	if (strcmp(serverVersion, clientVersion) == 0) {
 		checkUpLoad(serverManifest, clientManifest);
 	} else {
@@ -571,13 +496,11 @@ void checkUpLoad(struct manifestNode * serverManifest, struct manifestNode * cli
 int checkIfPresent (struct manifestNode* clientNode, struct manifestNode* head, char* operation) {
 	struct manifestNode* ptr = head;
 	while (ptr != NULL) {
-		//printf("comparing client: %s with server: %s\n", clientNode->path, ptr->path);
 		if (strcmp(clientNode->path, ptr->path) == 0) {
 			if (strcmp(operation, "upload") == 0){
 				int fd = getClientFilePath(clientNode->path);
 				char* string = readFile(fd);
 				char* hashString = hash(string);
-				//printf("serverNode: %s hashString %s\n", ptr->hash, hashString);
 				if (strcmp(ptr->hash, hashString) != 0) {
 					return 0;
 				}
@@ -591,7 +514,6 @@ int checkIfPresent (struct manifestNode* clientNode, struct manifestNode* head, 
 					}
 				}
 			}
-			//printf("client: %s and server: %s are equal\n", clientNode->path, ptr->path);
 			return 1;
 		}
 		ptr = ptr->next;
@@ -601,6 +523,9 @@ int checkIfPresent (struct manifestNode* clientNode, struct manifestNode* head, 
 	}
 	return 1;
 }
+/*
+	adds node to manifst ll
+*/
 void addManifestList(struct manifestNode ** head, char* path, char* version, char* hash) {
 	struct manifestNode* temp = (struct manifestNode*)malloc(sizeof(struct manifestNode));
 	temp->path = malloc(strlen(path)+1);
@@ -612,19 +537,19 @@ void addManifestList(struct manifestNode ** head, char* path, char* version, cha
 	temp->hash = malloc(strlen(hash)+1);
 	strcpy(temp->hash, hash);
 	temp->hash[strlen(hash)] = '\0';
-	printf("the node contains %s %s %s\n", path, version, hash);
 	if (*head == NULL) {
 		*head = temp;
 	} else {
 		struct manifestNode * ptr = *head;
 		while (ptr->next != NULL) {
 			ptr = ptr->next;
-			//counter++;
 		}
-		//counter++;
 		ptr->next = temp;
 	}
 }
+/*
+	checks if a file should be modified
+*/
 void checkModify(struct manifestNode * serverManifest, struct manifestNode * clientManifest) {
 	struct manifestNode *clientPtr = clientManifest;
 	while (clientPtr != NULL) {
@@ -651,6 +576,9 @@ void checkModify(struct manifestNode * serverManifest, struct manifestNode * cli
 		clientPtr = clientPtr->next;
 	}
 }
+/*
+	checks if a file should be added
+*/
 void checkAdd(struct manifestNode * serverManifest, struct manifestNode * clientManifest) {
 	struct manifestNode *serverPtr = serverManifest;
 	while (serverPtr != NULL) {
@@ -673,6 +601,9 @@ void checkAdd(struct manifestNode * serverManifest, struct manifestNode * client
 		serverPtr = serverPtr->next;
 	}
 }
+/*
+	checks if file should be deleted
+*/
 void checkDelete(struct manifestNode * serverManifest, struct manifestNode * clientManifest) {
 	struct manifestNode *clientPtr = clientManifest;
 	while (clientPtr != NULL) {
@@ -695,15 +626,14 @@ void checkDelete(struct manifestNode * serverManifest, struct manifestNode * cli
 		clientPtr = clientPtr->next;
 	}
 }
+/*
+	appends client/ to file path and returns file desc
+*/
 int getClientFilePath(char* filename) {
 	char* path = malloc(strlen("client/") +  strlen(filename) +1 );
 	strcpy(path, "client/");
 	strcat(path, filename);
-	printf("path: %s\n", path);
 	int fd = open(path, O_RDONLY);
-	if (fd > 0) {
-		//printf("file has been successfully opened\n");
-	}
 	return fd;
 }
 /*
@@ -729,41 +659,30 @@ char* getUpgradeList(char* projName) {
 	strcpy(updatePath, "client/");
 	strcat(updatePath, projName);
 	strcat(updatePath, "/.Update");
-	printf("updatePAth: %s\n", updatePath);
 	if (access(updatePath, F_OK) == -1) {
-		//printf("Error: There is no .Update file present\n");
 		return NULL;
 	}
 	int fd = open(updatePath, O_RDONLY);
 	char* contents = readFile(fd);
-	//printf("update contents %s\n", contents);
 	char* token = strtok(contents, " \n");
 	char* tag = token;
-	printf("tag: %s\n", tag);
 	token = strtok(NULL, " \n");
 	char* path = token;
-	printf("path: %s\n", path);
 	token = strtok(NULL, " \n");
 	char* hash = token;
-	printf("hash: %s\n", hash);
 	token = strtok(NULL, " \n");
 	char* version = token;
-	printf("version: %s\n", version);
 	struct updateNode * upgradeList = NULL;
 	addUpgradeList(&upgradeList, tag, path, hash, version);
 	while (token != NULL) {
 		token = strtok(NULL, " \n");
 		tag = token;
-		//printf("tag: %s\n", tag);
 		token = strtok(NULL, " \n");
 		path = token;
-	//	printf("path: %s\n", path);
 		token = strtok(NULL, " \n");
 		hash = token;
-		//printf("hash: %s\n", hash);
 		token = strtok(NULL, " \n");
 		version = token;
-		//printf("version: %s\n", version);
 	
 		if (tag != NULL && hash != NULL && path != NULL && version != NULL) {
 			addUpgradeList(&upgradeList, tag, path, hash, version);
@@ -775,43 +694,32 @@ char* getUpgradeList(char* projName) {
 	strcat(manifestPath, projName);
 	strcat(manifestPath, "/.Manifest");
 	manifestPath[strlen("client/") + strlen(projName) + strlen("/.Manifest")] = '\0';
-	printf("client manifest\n");
 	int manfd = open(manifestPath, O_RDONLY);
-	printf("manifestPAth: %s\n", manifestPath);
-	printf("manfd: %d\n", manfd);
 	char* otherManifest = readFile(manfd);
-	printf("manifestfile string %s\n", otherManifest);
 	char* token2 = strtok(otherManifest+1, " \n");
 	struct manifestNode * clientManifest = NULL;
 	while (token2 != NULL) {
 		token2 = strtok(NULL, " \n");
 		char* path = token2;
-		printf("path: %s\n", path);
 		token2 = strtok(NULL, " \n");
 		char* version = token2;
-		printf("version: %s\n", version);
 		token2 = strtok(NULL, " \n");
 		char* hash = token2;
-		printf("version: %s\n", hash);
 		if (path != NULL && version != NULL && hash != NULL) {
-			printf("path: %s version: %s hash: %s\n", path, version, hash);
 			addManifestList(&clientManifest, path, version, hash);
 		}
 	}
 	deleteFromManifest(upgradeList, &clientManifest);
 	updateManifest(upgradeList, &clientManifest);
 	char* message = requestFiles(upgradeList);
-	struct manifestNode * manifestCur = clientManifest;
-	printf("----this is the manifest list ----------\n");
-	while (manifestCur != NULL) {
-		printf("path: %s version: %s hash: %s\n", manifestCur->path, manifestCur->version, manifestCur->hash);
-		manifestCur = manifestCur->next;
-	}
 	writeNewManifest(clientManifest, projName, upgradeList);
 	free(clientManifest);
 	free(upgradeList);
 	return message;
 }
+/*
+	adds node to upgrade list
+*/
 void addUpgradeList(struct updateNode ** head, char* tag, char* path, char* hash, char* version) {
 	struct updateNode* temp = (struct updateNode*)malloc(sizeof(struct updateNode));
 	temp->tag = malloc(strlen(tag)+1);
@@ -826,16 +734,13 @@ void addUpgradeList(struct updateNode ** head, char* tag, char* path, char* hash
 	temp->version = malloc(strlen(version)+1);
 	strcpy(temp->version, version);
 	temp->version[strlen(version)] = '\0';
-	printf("the node contains %s %s %s %s\n", tag, path, hash, version);
 	if (*head == NULL) {
 		*head = temp;
 	} else {
 		struct updateNode * ptr = *head;
 		while (ptr->next != NULL) {
 			ptr = ptr->next;
-			//counter++;
 		}
-		//counter++;
 		ptr->next = temp;
 	}
 	
@@ -862,10 +767,12 @@ void deleteFromManifest(struct updateNode* upgradeList, struct manifestNode** ma
 		manifestPrev = manifestCur;
 		manifestCur = manifestCur->next;
 	}
-	printf("node containing %s will be deleted\n", manifestCur->path);
 	manifestPrev->next = manifestCur->next;
 	free(manifestCur);
 }
+/*
+	updates manifest ll
+*/
 void updateManifest(struct updateNode* upgradeList, struct manifestNode** manifestList) {
 	struct updateNode* updatePtr = upgradeList;
 	while (updatePtr != NULL) {
@@ -877,6 +784,9 @@ void updateManifest(struct updateNode* upgradeList, struct manifestNode** manife
 		updatePtr = updatePtr->next;
 	}
 }
+/*
+	overwrites manifest ll
+*/
 void overWriteMan (struct manifestNode** manifestList, char* path, char* version, char* hash) {
 	struct manifestNode* ptr = *manifestList;
 	while (strcmp(path, ptr->path) != 0) {
@@ -888,7 +798,7 @@ void overWriteMan (struct manifestNode** manifestList, char* path, char* version
 	strcpy(ptr->hash, hash);
 }
 /*
-
+	generates string to send to client to get string
 */
 char* requestFiles(struct updateNode* head) {	
 	struct updateNode* ptr = head;
@@ -903,7 +813,6 @@ char* requestFiles(struct updateNode* head) {
 	}
 	char buffer[10];
 	sprintf(buffer, "%d", counter);
-	//printf("length: %d buffer %s\n", length, buffer);
 	char* clientMessage = malloc(length + strlen(buffer)+3);
 	strcpy(clientMessage, "r:");
 	strcat(clientMessage, buffer);
@@ -915,7 +824,6 @@ char* requestFiles(struct updateNode* head) {
 		}
 		ptr = ptr->next;
 	}
-	//printf("update message from c %s\n", clientMessage);
 	return clientMessage;
 }
 void freeManifestList(struct manifestNode* head) {
@@ -934,8 +842,10 @@ void freeUpdateList(struct updateNode* head) {
 		free(ptr);
 	}
 }
+/*
+	wites or rewrites file
+*/
 void writeFile(char* filename, char* contents) {
-	printf("filename: %s and contents: %s\n", filename, contents);
 	char* path = malloc(strlen("client/") +  strlen(filename) +1 );
 	strcpy(path, "client/");
 	strcat(path, filename);
@@ -945,25 +855,24 @@ void writeFile(char* filename, char* contents) {
 		int fd = open(path,O_RDWR | O_CREAT, mode);
 		write(fd, contents, strlen(contents));
 	} else {
-		printf("%s does not exist\n", path);
 		mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
 		int fd = open(path,O_RDWR | O_CREAT, mode);
 		write(fd, contents, strlen(contents));
 	}
 	
 }
-
+/*
+	rewrites manifest
+*/
 void writeNewManifest(struct manifestNode* manList, char* projName, struct updateNode* updateList) {
 	char* projPath = malloc(strlen("client/") + strlen(projName) + strlen("./Manifest") + 1);
 	strcpy(projPath, "client/");
 	strcat(projPath, projName);
 	strcat(projPath, "/.Manifest");
 	projPath[strlen("client/") + strlen(projName) + strlen("./Manifest")] = '\0';
-	printf("projPath: %s\n", projPath);
 	int highestVersion = findHighestVersion(updateList);
 	char buffer[10];
 	sprintf(buffer, "%d", highestVersion);
-	printf("highestVersion: %s\n", buffer);
 	remove(projPath);
 	mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
 	int fd = open(projPath, O_RDWR | O_CREAT, mode);
