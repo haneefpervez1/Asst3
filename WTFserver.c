@@ -35,6 +35,7 @@ int printDir_contents (char* directoryName, struct fileNode ** head);
 int tokStringSendFiles(struct fileNode ** , char* );
 int checkDir(char *);
 void *get_in_addr(struct sockaddr *);
+int remove_directory(const char *);
 // get sockaddr, IPv4 or IPv6:
 void *get_in_addr(struct sockaddr *sa)
 {
@@ -226,6 +227,21 @@ int main(int argc, char** argv) {
 			int length = tokStringSendFiles(&fileList, requestString);
 			char* messageToClient = sendFile(length, fileList);
 			send_to_client(client_socket, messageToClient);
+		}
+		if (strncmp("destroy", buffer, 7) == 0) {
+			printf("in destroy\n");
+			char* projName = READ(client_socket);
+			printf("projname: %s\n", projName);
+			char* oldString = malloc(strlen("server/") + strlen(projName) + 1);
+			strcpy(oldString, "server/");
+			strcat(oldString, projName);
+			remove_directory(oldString);
+			/*
+			oldString[strlen("server/") + strlen(projName)] = '\0';
+			char* newString = malloc(strlen("server/.") + strlen(projName) + 1);
+			strcpy(newString, "server/.");
+			strcat(newString, projName);
+			rename(oldString, newString);*/
 		}
 		//hash("systems");
 		break;
@@ -496,6 +512,65 @@ int tokStringSendFiles(struct fileNode ** head, char* clientString) {
 		}
 	}
 	return fileListLen;
+}
+int remove_directory(const char *path)
+{
+   DIR *d = opendir(path);
+   size_t path_len = strlen(path);
+   int r = -1;
+
+   if (d)
+   {
+      struct dirent *p;
+
+      r = 0;
+
+      while (!r && (p=readdir(d)))
+      {
+          int r2 = -1;
+          char *buf;
+          size_t len;
+
+          /* Skip the names "." and ".." as we don't want to recurse on them. */
+          if (!strcmp(p->d_name, ".") || !strcmp(p->d_name, ".."))
+          {
+             continue;
+          }
+		  len = path_len + strlen(p->d_name) + 2; 
+          buf = malloc(len);
+
+          if (buf)
+          {
+             struct stat statbuf;
+
+             snprintf(buf, len, "%s/%s", path, p->d_name);
+
+             if (!stat(buf, &statbuf))
+             {
+                if (S_ISDIR(statbuf.st_mode))
+                {
+                   r2 = remove_directory(buf);
+                }
+                else
+                {
+                   r2 = unlink(buf);
+                }
+             }
+
+             free(buf);
+          }
+		  r = r2;
+      }
+
+      closedir(d);
+   }
+
+   if (!r)
+   {
+      r = rmdir(path);
+   }
+
+   return r;
 }
 int checkDir(char * path)
 {

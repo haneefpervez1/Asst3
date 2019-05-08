@@ -265,6 +265,10 @@ int main (int args, char** argv) {
 		printf("updatePath: %s\n", updatePath);
 		//remove(updatePath);
 	}
+	if (strcmp(argv[1], "destroy") == 0) {
+		send_to_server(network_socket, argv[1]);
+		send_to_server(network_socket, argv[2]);
+	}
 	//clwriteFile("newProj/file4.txt", "this is from the c program");
 	close(network_socket);
 	return 0;
@@ -292,8 +296,8 @@ void send_to_server(int network_socket, char * string)
 }
 int configure(char* hostname, char* port) {
 	if (access(".configure", F_OK) != -1) {
-		printf("configure file already exists\n");
-		return 1;
+		remove(".configure");
+	//	return 1;
 	} 
 	printf("hostname: %s port: %s \n", hostname, port);
 	mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
@@ -554,7 +558,9 @@ void checkUpLoad(struct manifestNode * serverManifest, struct manifestNode * cli
 	struct manifestNode *clientPtr = clientManifest;
 	while (clientPtr != NULL) {
 		if (checkIfPresent(clientPtr, serverManifest, "upload") == 0) {
+			//printf("this is the client ptr path: %s\n", clientPtr->path);
 			printf("U %s %s\n", clientPtr->path, clientPtr->hash);	
+			//return;
 		}
 		clientPtr = clientPtr->next;
 	}
@@ -565,6 +571,7 @@ void checkUpLoad(struct manifestNode * serverManifest, struct manifestNode * cli
 int checkIfPresent (struct manifestNode* clientNode, struct manifestNode* head, char* operation) {
 	struct manifestNode* ptr = head;
 	while (ptr != NULL) {
+		//printf("comparing client: %s with server: %s\n", clientNode->path, ptr->path);
 		if (strcmp(clientNode->path, ptr->path) == 0) {
 			if (strcmp(operation, "upload") == 0){
 				int fd = getClientFilePath(clientNode->path);
@@ -584,6 +591,7 @@ int checkIfPresent (struct manifestNode* clientNode, struct manifestNode* head, 
 					}
 				}
 			}
+			//printf("client: %s and server: %s are equal\n", clientNode->path, ptr->path);
 			return 1;
 		}
 		ptr = ptr->next;
@@ -969,6 +977,7 @@ void writeNewManifest(struct manifestNode* manList, char* projName, struct updat
 		write(fd, ptr->version, strlen(ptr->version));
 		write(fd, " ", strlen(" "));
 		write(fd, ptr->hash, strlen(ptr->hash));
+		write(fd, "\n", strlen("\n"));
 		ptr = ptr->next;
 	}
 	
