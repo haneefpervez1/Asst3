@@ -14,8 +14,7 @@
 #include <stdio.h>
 #include <openssl/sha.h>
 #include <ctype.h>
-
-#define PORT "9002"
+#include<pthread.h>
 struct fileNode {
 	int nameLength;
 	char* name;
@@ -50,6 +49,11 @@ int main(int argc, char** argv) {
 // -------------------------------------------------------> SOCKET CREATION
 // ------------------------------------------------------->
 // ------------------------------------------------------->
+	if(argc!=2)
+	{
+	 printf("Error: Not enough Arguments\n");
+	 return 1;
+	}
 	int sockfd, client_socket;
 	struct addrinfo a, *b, *p;
 	struct sockaddr_storage client;
@@ -57,13 +61,13 @@ int main(int argc, char** argv) {
 	int opt=1;
 	int rv;
 	char s[20];
-		
+
     memset(&a, 0, sizeof(a));
     a.ai_family = AF_UNSPEC;
     a.ai_socktype = SOCK_STREAM;
     a.ai_flags = AI_PASSIVE; // use my IP
 
-    if ((rv = getaddrinfo(NULL, PORT, &a, &b)) != 0) {
+    if ((rv = getaddrinfo(NULL, argv[1], &a, &b)) != 0) {
         printf("getadd Error");
         return 1;
     }

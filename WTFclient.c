@@ -13,7 +13,7 @@
 #include <arpa/inet.h>
 #include <ctype.h>
 #include <netdb.h>
-#define PORT "9002"
+#include<pthread.h>
 struct manifestNode{
 	char * path;
 	char* version;
@@ -79,6 +79,10 @@ int main (int args, char** argv) {
 		//write(network_socket, &configureMessage, sizeof(configureMessage));
 		printf("configure %d\n", configure(argv[2], argv[3]));
 	}
+	if (strcmp(argv[1], "add") == 0) {
+		addFile(argv[2], argv[3]);
+		return 0;
+	}
 // ----------------------------------------------------------------------------------> SOCKET CREATION
     int network_socket;  
     struct addrinfo hints, *servinfo, *p;
@@ -89,13 +93,17 @@ int main (int args, char** argv) {
 	char* hostName = token;
 	printf("HostName: %s\n", hostName);
 	token = strtok(NULL, " ");
-	printf("Port: %s\n", PORT);
+	int PORT = atoi(token);
+	PORT= PORT/10;
+	char port[strlen(token)-1];
+	sprintf(port, "%d", PORT);
+	printf("Port: %s\n", port);
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_flags=AI_PASSIVE;
     //hints.ai_flags = hostName;
-    if ((rv = getaddrinfo(hostName, PORT, &hints, &servinfo)) != 0) {
+    if ((rv = getaddrinfo(hostName, port, &hints, &servinfo)) != 0) {
         fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
         return 1;
     }
@@ -215,9 +223,6 @@ int main (int args, char** argv) {
 	  open(path,O_RDWR | O_CREAT, mode);
 	 }
 	
-	}
-	if (strcmp(argv[1], "add") == 0) {
-		addFile(argv[2], argv[3]);
 	}
 	if (strcmp(argv[1], "update") == 0) {
 		printf("in update\n");
